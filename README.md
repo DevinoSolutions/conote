@@ -11,7 +11,7 @@ CoNote keeps the full Tiptap editor — the headless, framework-agnostic editor 
 The goals of the fork are:
 
 - **Track upstream Tiptap.** Regularly merge changes from `ueberdosis/tiptap` so CoNote stays current with the editor core and extensions. All CoNote code lives in new packages, and upstream packages are never modified, so these merges stay near-conflict-free.
-- **Add open, self-hostable AI editing.** Offer AI features (AI text generation today; AI suggestions, AI change review, and an AI agent on the roadmap) that are open source and provider-agnostic rather than tied to a proprietary cloud service.
+- **Add open, self-hostable AI editing.** Offer AI features (text generation, proofreading suggestions, reviewable AI change tracking, and a document-editing AI agent) that are open source and provider-agnostic rather than tied to a proprietary cloud service.
 
 CoNote's AI packages are **written from scratch**. They contain **no code from Tiptap's proprietary AI products** and do not depend on Tiptap's cloud services. They only implement comparable capabilities against a provider-agnostic interface — an OpenRouter adapter is included, and any LLM backend can be plugged in by implementing that interface.
 
@@ -27,10 +27,10 @@ The AI command surface in CoNote is designed to feel familiar to developers who 
 
 | Feature | Description | Status |
 | --- | --- | --- |
-| AI Generation | Text generation and editing commands (complete, rewrite, summarize, adjust tone, translate, custom prompt) that stream into the document. | In progress — Phase 1 |
-| AI Suggestion | Inline AI-driven suggestions surfaced in the editor. | Planned |
-| AI Changes | Review and accept/reject AI-proposed changes. | Planned |
-| AI Agent | An AI agent that can operate over document content. | Planned |
+| AI Generation | Text generation and editing commands (complete, rewrite, summarize, adjust tone, translate, custom prompt) that stream into the document. | Available — `@conote/extension-ai` |
+| AI Suggestion | Inline AI-driven suggestions surfaced in the editor with accept/reject. | Available — `@conote/extension-ai-suggestion` |
+| AI Changes | Review and accept/reject AI-proposed changes as tracked diffs before they touch the document. | Available — `@conote/extension-ai-changes` |
+| AI Agent | An AI agent that can read and edit the document via tool calls, with its edits staged for review. | Available — `@conote/extension-ai-agent` |
 
 All of these are, or will be, implemented independently and provider-agnostically. The included OpenRouter adapter is one backend; you can supply your own.
 
@@ -42,8 +42,11 @@ The CoNote-specific packages are maintained under the monorepo alongside the ups
 | --- | --- | --- |
 | `@conote/ai-core` | `packages/conote-ai-core` | Provider-agnostic AI layer. Defines the completion-provider interface (streaming and non-streaming) and ships an OpenRouter adapter. No editor or provider-specific code leaks across the interface. |
 | `@conote/extension-ai` | `packages/conote-extension-ai` | Tiptap extension implementing AI Generation. Exposes editor commands that stream tokens into the document via ProseMirror transactions, with abort support and state for UI binding. |
+| `@conote/extension-ai-suggestion` | `packages/conote-extension-ai-suggestion` | Rule-based proofreading suggestions rendered as inline decorations, individually or collectively accept/rejectable. |
+| `@conote/extension-ai-changes` | `packages/conote-extension-ai-changes` | LLM-proposed edits shown as reviewable tracked changes (word-level diff); the document is not modified until a change is accepted. |
+| `@conote/extension-ai-agent` | `packages/conote-extension-ai-agent` | Conversational agent that reads and edits the document via tool calls; by default its edits are staged through the AI Changes review flow. |
 
-These packages may not all exist yet — they are being built out as part of Phase 1. This README documents the intended layout so the structure is clear from the start.
+A runnable playground for all of the above lives in [`conote-demo/`](conote-demo/), including a small proxy server that keeps your LLM API key server-side.
 
 ## Development
 
