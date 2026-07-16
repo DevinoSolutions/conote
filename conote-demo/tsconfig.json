@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "paths": {
+      "@conote/ai-core": ["../packages/conote-ai-core/src/index.ts"],
+      "@conote/extension-ai": ["../packages/conote-extension-ai/src/index.ts"],
+      "@tiptap/core": ["./node_modules/@tiptap/core/dist/index.d.ts"],
+      "@tiptap/pm/*": ["./node_modules/@tiptap/pm/dist/*/index.d.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

@@ -34,7 +34,7 @@ import { OpenRouterProvider } from '@conote/ai-core'
 
 const provider = new OpenRouterProvider({
   apiKey: process.env.OPENROUTER_API_KEY,
-  defaultModel: 'anthropic/claude-3.5-haiku',
+  defaultModel: 'anthropic/claude-haiku-4.5',
   headers: {
     'HTTP-Referer': 'https://your-app.example',
     'X-Title': 'Your App',

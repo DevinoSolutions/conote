@@ -1,0 +1,24 @@
+{
+  "name": "conote-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Self-contained demo for CoNote AI Generation (proxy + Vite playground). Not published, not a workspace member.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "server": "node server/index.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tiptap/core": "^3.28.0",
+    "@tiptap/pm": "^3.28.0",
+    "@tiptap/starter-kit": "^3.28.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0"
+  }
+}

@@ -27,7 +27,7 @@ import { Ai } from '@conote/extension-ai'
 
 const provider = new OpenRouterProvider({
   baseUrl: '/api/ai', // proxy that injects OPENROUTER_API_KEY server-side
-  defaultModel: 'anthropic/claude-3.5-haiku',
+  defaultModel: 'anthropic/claude-haiku-4.5',
 })
 
 const editor = new Editor({
@@ -35,7 +35,7 @@ const editor = new Editor({
     StarterKit,
     Ai.configure({
       provider,
-      defaultModel: 'anthropic/claude-3.5-haiku',
+      defaultModel: 'anthropic/claude-haiku-4.5',
       temperature: 0.7,
       // systemPrompt: 'Custom base system prompt…',
       // context: () => `Title: ${docTitle}`,

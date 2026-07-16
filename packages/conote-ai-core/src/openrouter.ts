@@ -7,7 +7,7 @@ export interface OpenRouterProviderOptions {
   apiKey?: string
   /** Default 'https://openrouter.ai/api/v1'; point at a proxy in prod. */
   baseUrl?: string
-  /** Default 'anthropic/claude-3.5-haiku'. */
+  /** Default 'anthropic/claude-haiku-4.5'. */
   defaultModel?: string
   /** Extra headers (e.g. HTTP-Referer, X-Title for OpenRouter). */
   headers?: Record<string, string>
@@ -16,7 +16,7 @@ export interface OpenRouterProviderOptions {
 }
 
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1'
-const DEFAULT_MODEL = 'anthropic/claude-3.5-haiku'
+const DEFAULT_MODEL = 'anthropic/claude-haiku-4.5'
 
 interface ChatCompletionBody {
   model: string
