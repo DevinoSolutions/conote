@@ -3,6 +3,8 @@ import StarterKit from '@tiptap/starter-kit'
 import { OpenRouterProvider } from '@conote/ai-core'
 import { Ai } from '@conote/extension-ai'
 import type { AiStorage } from '@conote/extension-ai'
+import { AiSuggestion } from '@conote/extension-ai-suggestion'
+import type { AiSuggestionRule, AiSuggestionStorage } from '@conote/extension-ai-suggestion'
 import './style.css'
 
 // Proxy mode: no apiKey in the browser. The provider posts to the local proxy,
@@ -14,16 +16,23 @@ const provider = new OpenRouterProvider({
 })
 
 const SAMPLE_CONTENT = `
-  <p>The old lighthouse had not shone in forty years, yet every evening the townspeople still glanced toward it out of habit, as if expecting the light to return.</p>
-  <p>Maren climbed the spiral stairs for the first time since childhood. The lens at the top was intact, coated in dust but unbroken, and she wondered how much of the past could be relit with patience and a little courage.</p>
+  <p>Last week our team recieved the final report, and we where definately impressed by the results. If we could of started sooner, the outcome might have been even better.</p>
+  <p>The committee shared there feedback with the group. Due to the fact that we had a large amount of time at our disposal, we were able to carefully and thoroughly review each and every single section of the document in great detail.</p>
 `
+
+// Two proofreading rules exercised by the "Proofread" panel below. Colors match
+// the decoration styling in style.css (via the --conote-ai-suggestion-color var).
+const SUGGESTION_RULES: AiSuggestionRule[] = [
+  { id: 'grammar', title: 'Spelling & grammar', prompt: 'Fix spelling mistakes and grammatical errors.', color: '#e11d48' },
+  { id: 'concise', title: 'Conciseness', prompt: 'Suggest more concise phrasing for wordy passages.', color: '#2563eb' },
+]
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
   <div class="wrap">
     <header>
       <h1>CoNote Demo</h1>
-      <p>AI Generation for Tiptap, streamed through a self-hosted proxy. Select text, then try the tools below.</p>
+      <p>AI Generation and Proofreading for Tiptap, streamed through a self-hosted proxy. Select text, then try the tools below, or run "Check document" to proofread.</p>
     </header>
 
     <div class="toolbar">
@@ -47,7 +56,27 @@ app.innerHTML = `
       <span class="error" id="ai-error" data-testid="ai-error"></span>
     </div>
 
-    <div class="editor" id="editor"></div>
+    <div class="proofread">
+      <div class="proofread-main">
+        <div class="proofread-bar">
+          <button id="load-suggestions" data-testid="load-suggestions" class="primary" title="Send the document for proofreading">Check document</button>
+          <span class="label">Proofread:</span>
+          <span class="state" id="suggestion-status" data-testid="suggestion-status" data-state="idle">idle</span>
+          <span class="error" id="suggestion-error" data-testid="suggestion-error"></span>
+        </div>
+        <div class="editor" id="editor"></div>
+      </div>
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <h2>Suggestions</h2>
+          <div class="sidebar-actions">
+            <button id="apply-all" data-testid="apply-all" title="Apply every suggestion">Apply all</button>
+            <button id="dismiss-all" data-testid="dismiss-all" title="Dismiss every suggestion">Dismiss all</button>
+          </div>
+        </div>
+        <ul class="suggestion-list" id="suggestion-list" data-testid="suggestion-list"></ul>
+      </aside>
+    </div>
 
     <footer>
       Part of <strong>CoNote</strong>, an open-source fork of Tiptap. Not affiliated with or endorsed by Tiptap GmbH. MIT licensed.
@@ -63,10 +92,18 @@ const editor = new Editor({
       provider,
       defaultModel: 'anthropic/claude-haiku-4.5',
     }),
+    AiSuggestion.configure({
+      provider,
+      defaultModel: 'anthropic/claude-haiku-4.5',
+      rules: SUGGESTION_RULES,
+    }),
   ],
   content: SAMPLE_CONTENT,
   autofocus: 'end',
 })
+
+const RULE_TITLES = new Map(SUGGESTION_RULES.map(rule => [rule.id, rule.title]))
+const RULE_COLORS = new Map(SUGGESTION_RULES.map(rule => [rule.id, rule.color ?? '']))
 
 // Expose for debugging / automated browser testing.
 ;(window as unknown as { editor: Editor }).editor = editor
@@ -107,3 +144,113 @@ on('#btn-custom', () => {
     editor.chain().focus().aiCustomPrompt(prompt).run()
   }
 })
+
+// --- Proofread panel -------------------------------------------------------
+
+const suggestionStatusEl = document.querySelector<HTMLElement>('#suggestion-status')!
+const suggestionErrorEl = document.querySelector<HTMLElement>('#suggestion-error')!
+const suggestionListEl = document.querySelector<HTMLUListElement>('#suggestion-list')!
+
+on('#load-suggestions', () => editor.commands.aiSuggestionLoad())
+on('#apply-all', () => editor.chain().focus().aiSuggestionApplyAll().run())
+on('#dismiss-all', () => editor.chain().aiSuggestionClear().run())
+
+/** Selects a suggestion and scrolls its decoration into view. */
+function selectSuggestion(id: string): void {
+  editor.chain().aiSuggestionSelect(id).run()
+  const decoration = editor.view.dom.querySelector('.conote-ai-suggestion--selected')
+  decoration?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+}
+
+/** Builds one suggestion card. `index` drives the accept/reject test ids. */
+function renderCard(
+  suggestion: AiSuggestionStorage['suggestions'][number],
+  index: number,
+  selectedId: string | null,
+): HTMLLIElement {
+  const card = document.createElement('li')
+  card.className = 'suggestion-card'
+  card.dataset.testid = `suggestion-${index}`
+  card.dataset.ruleId = suggestion.ruleId
+  if (suggestion.id === selectedId) {
+    card.classList.add('suggestion-card--selected')
+  }
+  const color = RULE_COLORS.get(suggestion.ruleId) || '#e11d48'
+  card.style.setProperty('--rule-color', color)
+
+  const body = document.createElement('button')
+  body.type = 'button'
+  body.className = 'suggestion-body'
+  body.title = 'Highlight this suggestion in the document'
+  body.addEventListener('click', () => selectSuggestion(suggestion.id))
+
+  const title = document.createElement('span')
+  title.className = 'suggestion-rule'
+  title.textContent = RULE_TITLES.get(suggestion.ruleId) ?? suggestion.ruleId
+  body.appendChild(title)
+
+  const diff = document.createElement('span')
+  diff.className = 'suggestion-diff'
+  const del = document.createElement('span')
+  del.className = 'suggestion-delete'
+  del.textContent = suggestion.deleteText
+  const arrow = document.createElement('span')
+  arrow.className = 'suggestion-arrow'
+  arrow.textContent = ' → '
+  const repl = document.createElement('span')
+  repl.className = 'suggestion-replacement'
+  repl.textContent = suggestion.replacementText
+  diff.append(del, arrow, repl)
+  body.appendChild(diff)
+
+  if (suggestion.note) {
+    const note = document.createElement('span')
+    note.className = 'suggestion-note'
+    note.textContent = suggestion.note
+    body.appendChild(note)
+  }
+  card.appendChild(body)
+
+  const actions = document.createElement('div')
+  actions.className = 'suggestion-actions'
+  const accept = document.createElement('button')
+  accept.className = 'accept'
+  accept.dataset.testid = `accept-${index}`
+  accept.textContent = 'Accept'
+  accept.addEventListener('click', () => editor.chain().focus().aiSuggestionApply(suggestion.id).run())
+  const reject = document.createElement('button')
+  reject.className = 'reject'
+  reject.dataset.testid = `reject-${index}`
+  reject.textContent = 'Reject'
+  reject.addEventListener('click', () => editor.chain().aiSuggestionReject(suggestion.id).run())
+  actions.append(accept, reject)
+  card.appendChild(actions)
+
+  return card
+}
+
+function renderSuggestions(): void {
+  const storage = editor.storage.aiSuggestion as AiSuggestionStorage
+  suggestionStatusEl.textContent = storage.state
+  suggestionStatusEl.dataset.state = storage.state
+  suggestionErrorEl.textContent =
+    storage.state === 'error' && storage.error ? storage.error.message : ''
+
+  suggestionListEl.replaceChildren()
+  if (storage.suggestions.length === 0) {
+    const empty = document.createElement('li')
+    empty.className = 'suggestion-empty'
+    empty.textContent =
+      storage.state === 'loading' ? 'Checking…' : 'No suggestions. Click "Check document".'
+    suggestionListEl.appendChild(empty)
+    return
+  }
+  storage.suggestions.forEach((suggestion, index) => {
+    suggestionListEl.appendChild(renderCard(suggestion, index, storage.selectedId))
+  })
+}
+
+editor.on('transaction', renderSuggestions)
+editor.on('update', renderSuggestions)
+window.setInterval(renderSuggestions, 150)
+renderSuggestions()

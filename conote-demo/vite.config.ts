@@ -20,6 +20,10 @@ export default defineConfig({
         find: /^@conote\/extension-ai$/,
         replacement: fromRoot('../packages/conote-extension-ai/src/index.ts'),
       },
+      {
+        find: /^@conote\/extension-ai-suggestion$/,
+        replacement: fromRoot('../packages/conote-extension-ai-suggestion/src/index.ts'),
+      },
       // The extension source lives outside this project's tree, so node_modules
       // walking from it misses the demo's install. Pin the exact tiptap
       // specifiers it imports to the demo's copies (this also dedupes @tiptap/core
@@ -28,6 +32,14 @@ export default defineConfig({
       {
         find: /^@tiptap\/pm\/state$/,
         replacement: fromRoot('./node_modules/@tiptap/pm/dist/state/index.js'),
+      },
+      {
+        find: /^@tiptap\/pm\/view$/,
+        replacement: fromRoot('./node_modules/@tiptap/pm/dist/view/index.js'),
+      },
+      {
+        find: /^@tiptap\/pm\/model$/,
+        replacement: fromRoot('./node_modules/@tiptap/pm/dist/model/index.js'),
       },
     ],
   },
