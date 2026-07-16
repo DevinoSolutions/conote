@@ -1,133 +1,90 @@
-![Tiptap Editor](.github/assets/cover.png)
+# CoNote
 
-[![LFX Health Score](https://insights.linuxfoundation.org/api/badge/health-score?project=tiptap)](https://insights.linuxfoundation.org/project/tiptap)
-[![Build Status](https://github.com/ueberdosis/tiptap/actions/workflows/build.yml/badge.svg)](https://github.com/ueberdosis/tiptap/actions/workflows/build.yml)
-[![Version](https://img.shields.io/npm/v/@tiptap/core.svg?label=version)](https://www.npmjs.com/package/@tiptap/core)
-[![Downloads](https://img.shields.io/npm/dm/@tiptap/core.svg)](https://npmcharts.com/compare/@tiptap/core?minimal=true)
-[![License](https://img.shields.io/npm/l/@tiptap/core.svg)](https://www.npmjs.com/package/@tiptap/core)
-[![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.gg/WtJ49jGshW)
-[![Sponsor](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub)](https://github.com/sponsors/ueberdosis)
-[![LFX Active Contributors](https://insights.linuxfoundation.org/api/badge/active-contributors?project=tiptap)](https://insights.linuxfoundation.org/project/tiptap)
+CoNote is an open-source fork of [Tiptap](https://github.com/ueberdosis/tiptap), the MIT-licensed headless rich-text editor built on [ProseMirror](https://prosemirror.net/). It is maintained by [Devino](https://github.com/DevinoSolutions) at https://github.com/DevinoSolutions/CoNote. There is nothing hidden about what this project is: it is a fork that tracks upstream Tiptap and adds a small number of independently written AI packages on top.
 
-# Tiptap Editor
+The upstream project's original README is preserved unchanged at [README.upstream.md](README.upstream.md).
 
-The Tiptap Editor is a headless, framework-agnostic rich text editor that's customizable and extendable through extensions. Its headless nature means it comes without a set user interface, offering full design freedom (for a jumpstart, see linked [UI templates](#examples-codesandbox-and-ui-templates) below). Tiptap is based on the highly reliable [ProseMirror](https://prosemirror.net/) library.
+## What is CoNote
 
-Tiptap Editor is complemented by the collaboration open-source backend [Hocuspocus](https://github.com/ueberdosis/hocuspocus). Both the Editor and Hocuspocus form the foundation of the [Tiptap Suite](https://tiptap.dev/).
+CoNote keeps the full Tiptap editor — the headless, framework-agnostic editor core and its extensions — and layers on an independent, self-hostable, open-source implementation of AI editing features. In upstream Tiptap, those AI capabilities are delivered as proprietary paid cloud products (Content AI). CoNote provides comparable capabilities that you can run against any LLM backend you choose, with the provider key kept on your own server.
 
-### How does the Tiptap Editor work?
+The goals of the fork are:
 
-- **Headless Framework:** Tiptap does not rely on a user interface. So there is no need for class overrides or code hacks. If you do need an example UI feel free to browse our [UI templates](#examples-codesandbox-and-ui-templates) linked below.
-- **Framework-agnostic:** The Tiptap Editor is designed to work across different frontend frameworks. This means whether you're using Vue, React, or plain JavaScript, Tiptap integrates without compatibility issues.
-- **Extension based:** Extensions in Tiptap allow for a tailored editing experience, from simple text styling to advanced features like drag-and-drop block editing. You have the option to choose from over 100 extensions available in the [documentation](https://tiptap.dev/docs/editor/extensions) and [community](https://github.com/ueberdosis/awesome-tiptap/#community-extensions) to enhance your editor's functionality.
-- **Customize your UX:** The editor was built to give you control to define your own [extensions](https://tiptap.dev/docs/editor/guide/custom-extensions) and [nodes](https://tiptap.dev/docs/editor/api/nodes).
+- **Track upstream Tiptap.** Regularly merge changes from `ueberdosis/tiptap` so CoNote stays current with the editor core and extensions. All CoNote code lives in new packages, and upstream packages are never modified, so these merges stay near-conflict-free.
+- **Add open, self-hostable AI editing.** Offer AI features (AI text generation today; AI suggestions, AI change review, and an AI agent on the roadmap) that are open source and provider-agnostic rather than tied to a proprietary cloud service.
 
-### Editor Pro Extensions
+CoNote's AI packages are **written from scratch**. They contain **no code from Tiptap's proprietary AI products** and do not depend on Tiptap's cloud services. They only implement comparable capabilities against a provider-agnostic interface — an OpenRouter adapter is included, and any LLM backend can be plugged in by implementing that interface.
 
-The **Pro Extensions** are a set of advanced functionalities that enhance the capabilities of the Tiptap Editor. They are additional features that can be integrated into the base editor to provide more sophisticated editing options.
+## Relationship to Tiptap
 
-Key functionalities include collaborative editing, commenting, versioning, document conversion and AI related features.
-Review the docs right [here](https://tiptap.dev/docs/editor/extensions).
+CoNote is a fork, not a rewrite. The editor and its extensions come directly from upstream Tiptap and remain under Tiptap's MIT license, with all copyright notices intact. We maintain an `upstream` git remote pointing at `ueberdosis/tiptap` and periodically merge its changes into CoNote.
 
-Pro Extensions need a valid subscription.
+What CoNote adds sits entirely in separate, new packages (see [Packages](#packages)). This separation is deliberate: it keeps the fork easy to keep in sync with upstream and makes it obvious which code originates from Tiptap and which is CoNote's own work.
 
-### Make your editor collaborative
+The AI command surface in CoNote is designed to feel familiar to developers who know Tiptap's documented AI API, so migration is intuitive — but it is independently designed and implemented, based only on publicly documented behavior. No proprietary Tiptap AI code is used.
 
-Interested in collaborative editing? Check out our open-source package [Hocuspocus](https://github.com/ueberdosis/hocuspocus) - a collaboration backend built around the CRDT power of [Yjs](https://github.com/yjs/yjs). Hocuspocus serves as the backbone for the [Tiptap Suite](https://tiptap.dev/).
+## AI features
 
-## Documentation
+| Feature | Description | Status |
+| --- | --- | --- |
+| AI Generation | Text generation and editing commands (complete, rewrite, summarize, adjust tone, translate, custom prompt) that stream into the document. | In progress — Phase 1 |
+| AI Suggestion | Inline AI-driven suggestions surfaced in the editor. | Planned |
+| AI Changes | Review and accept/reject AI-proposed changes. | Planned |
+| AI Agent | An AI agent that can operate over document content. | Planned |
 
-For more detailed information, make sure to check out our [documentation](https://tiptap.dev/docs/editor/installation). If you encounter any problems or have suggestions for our system, please open an issue.
+All of these are, or will be, implemented independently and provider-agnostically. The included OpenRouter adapter is one backend; you can supply your own.
 
-### Examples, CodeSandbox and UI Templates
+## Packages
 
-Have a look at the [examples to see Tiptap in action](https://tiptap.dev/examples) or review and fork our codesandboxes.
+The CoNote-specific packages are maintained under the monorepo alongside the upstream `@tiptap/*` packages. They are MIT-licensed and written from scratch.
 
-- [Basic example of the Tiptap editor.](https://codesandbox.io/p/devbox/editor-9x9dkd?embed=1&file=%2Fsrc%2FApp.js)
-- [Collaboration ready Tiptap CodeSandbox](https://codesandbox.io/p/devbox/collaboration-4stk94)
-- React notion-like block editor template: [Demo](https://templates.tiptap.dev/)
+| Package | Location | Description |
+| --- | --- | --- |
+| `@conote/ai-core` | `packages/conote-ai-core` | Provider-agnostic AI layer. Defines the completion-provider interface (streaming and non-streaming) and ships an OpenRouter adapter. No editor or provider-specific code leaks across the interface. |
+| `@conote/extension-ai` | `packages/conote-extension-ai` | Tiptap extension implementing AI Generation. Exposes editor commands that stream tokens into the document via ProseMirror transactions, with abort support and state for UI binding. |
 
-## About Tiptap
+These packages may not all exist yet — they are being built out as part of Phase 1. This README documents the intended layout so the structure is clear from the start.
 
-Tiptap is a collection of developer components based on open-source technology, forming the basis of our advanced, paid features. It includes the open-source editor component, collaboration features, Content AI, and Tiptap Cloud. We are developing open-source products that also shape our paid features. We're committed to improving both, ensuring quality and reliability in every update.
+## Development
 
-For more details, visit the Tiptap [documentation](https://tiptap.dev/docs/editor/introduction) or [website](https://tiptap.dev/).
+CoNote uses the same tooling as upstream Tiptap. The monorepo is managed with [pnpm](https://pnpm.io/). See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guidelines.
 
-### Community
+```bash
+# Install dependencies
+pnpm install
 
-For help, discussion about best practices, or any other conversation that would benefit from being searchable:
+# Build all packages
+pnpm build
 
-[Discuss Tiptap on GitHub](https://github.com/ueberdosis/tiptap/discussions)
+# Run tests
+pnpm test
+```
 
-### Sponsors 💖
+The demos app can be run locally with `pnpm dev`. New demos are scaffolded with `pnpm run make:demo` (see [CONTRIBUTING.md](CONTRIBUTING.md) for details).
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://www.complish.app/">
-        <img src="https://uploads-ssl.webflow.com/5fa93d27380666789a1cbbd3/5fae50824b4d2d06f3d2898f_Frame%20374.png" width="25"><br>
-        <strong>Complish</strong>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://www.storyblok.com/">
-        <img src="https://unavatar.io/github/storyblok" width="25"><br>
-        <strong>Storyblok</strong>
-      </a>
-    </td>
-    <td align="center">
-      <a href="https://posthog.com/">
-        <img src="https://unavatar.io/github/posthog" width="25"><br>
-        <strong>PostHog</strong>
-      </a>
-    </td>
-    <td align="center" width="100">
-      <a href="https://reflect.app/">
-        <img src="https://unavatar.io/reflect.app" width="25"><br>
-        <strong>Reflect</strong>
-      </a>
-    </td>
-    <td align="center" width="100">
-      <a href="https://ziffmedia.com/">
-        <img src="https://unavatar.io/github/ziffmedia" width="25"><br>
-        <strong>Ziff Media</strong>
-      </a>
-    </td>
-    <td align="center" width="100">
-      <a href="https://www.basewell.com/">
-        <img src="https://unavatar.io/github/Basewell" width="25"><br>
-        <strong>Basewell</strong>
-      </a>
-    </td>
-    <td align="center" width="100">
-      <a href="https://poggio.io">
-        <img src="https://unavatar.io/github/poggiolabs" width="25"><br>
-        <strong>Poggio</strong>
-      </a>
-    </td>
-  </tr>
-</table>
+## Staying in sync with upstream
 
-[iFixit](https://www.ifixit.com/), [ApostropheCMS](https://apostrophecms.com/), [Novadiscovery](http://www.novadiscovery.com/), [Omics Data Automation](https://www.omicsautomation.com), [Flow Mobile](https://www.flowmobile.app/), [DocIQ](https://www.dociq.io/) and [hundreds of awesome individuals](https://github.com/sponsors/ueberdosis).
+CoNote tracks `ueberdosis/tiptap`. To pull in upstream changes, add the upstream remote once and merge from it:
 
-### Contributing
+```bash
+# One-time: register the upstream remote
+git remote add upstream https://github.com/ueberdosis/tiptap.git
 
-Feel like adding some magic of your own to Tiptap Editor Core? We welcome contributions! Please see our [CONTRIBUTING](CONTRIBUTING.md) guidelines for how to get started.
+# Fetch and merge upstream changes into your branch
+git fetch upstream
+git merge upstream/main
+```
 
-### Contributors
+Because all CoNote code lives in separate packages (`packages/conote-*`) and upstream packages are left untouched, these merges are expected to be near-conflict-free.
 
-[Sam Willis](https://github.com/samwillis),
-[Brian Hung](https://github.com/BrianHung),
-[Dirk Holtwick](https://github.com/holtwick),
-[Sam Duvall](https://github.com/SamDuvall),
-[Christoph Flathmann](https://github.com/Chrissi2812),
-[Erick Wilder](https://github.com/erickwilder),
-[Marius Tolzmann](https://github.com/mariux),
-[jjangga0214](https://github.com/jjangga0214),
-[Maya Nedeljkovich](https://github.com/mayacoda),
-[Ryan Bliss](https://github.com/ryanbliss),
-[Gregor](https://github.com/gambolputty) and [many more](../../contributors).
+## License & attribution
 
-## License
+CoNote is distributed under the MIT License. The upstream Tiptap editor and extensions retain their original MIT license and copyright notices — see [LICENSE.md](LICENSE.md). CoNote's own packages (`@conote/ai-core`, `@conote/extension-ai`, and future AI packages) are likewise MIT-licensed.
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+### Trademarks and affiliation
+
+Tiptap is created by [überdosis / Tiptap GmbH](https://tiptap.dev/). "Tiptap" is referenced here solely for attribution and to describe compatibility. CoNote is **not affiliated with, sponsored by, or endorsed by** Tiptap GmbH. No Tiptap logos or brand assets are used in CoNote.
+
+The editor is built on [ProseMirror](https://prosemirror.net/) by Marijn Haverbeke, whose work underpins both Tiptap and, by extension, CoNote.
+
+CoNote's AI packages are original work by Devino. They contain no code from Tiptap's proprietary AI products and only reimplement comparable capabilities against a provider-agnostic interface.
