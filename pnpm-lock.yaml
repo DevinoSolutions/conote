@@ -412,6 +412,8 @@ importers:
         specifier: workspace:^
         version: link:../pm
 
+  packages/conote-ai-core: {}
+
   packages/core:
     devDependencies:
       '@tiptap/pm':

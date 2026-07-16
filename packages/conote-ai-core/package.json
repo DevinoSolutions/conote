@@ -1,0 +1,45 @@
+{
+  "name": "@conote/ai-core",
+  "version": "0.1.0",
+  "description": "Provider-agnostic LLM completion layer with an OpenRouter adapter. Part of CoNote, an open-source fork of Tiptap.",
+  "keywords": [
+    "conote",
+    "ai",
+    "llm",
+    "openrouter",
+    "completion",
+    "streaming"
+  ],
+  "homepage": "https://github.com/DevinoSolutions/CoNote",
+  "bugs": {
+    "url": "https://github.com/DevinoSolutions/CoNote/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DevinoSolutions/CoNote",
+    "directory": "packages/conote-ai-core"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/index.d.ts",
+        "require": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch --sourcemap"
+  }
+}
