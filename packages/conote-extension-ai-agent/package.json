@@ -1,6 +1,6 @@
 {
   "name": "@conote/extension-ai-agent",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A conversational AI agent for Tiptap that reads the document and edits it through tool calls, staging its changes for review via @conote/extension-ai-changes. Part of CoNote, an open-source fork of Tiptap.",
   "keywords": [
     "conote",

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { AiProviderError, OpenRouterProvider } from '../src/index.js'
-import type { ChatRequest, CompletionRequest } from '../src/index.js'
+import type { ChatRequest, ChatStreamEvent, CompletionRequest } from '../src/index.js'
 
 const encoder = new TextEncoder()
 
@@ -104,10 +104,11 @@ describe('OpenRouterProvider', () => {
   })
 
   it('throws AiProviderError with status and body message on non-2xx', async () => {
-    const fetch = vi.fn(async () =>
-      new Response(JSON.stringify({ error: { message: 'rate limited' } }), {
-        status: 429,
-      }),
+    const fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ error: { message: 'rate limited' } }), {
+          status: 429,
+        }),
     )
     const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
 
@@ -182,7 +183,12 @@ describe('OpenRouterProvider', () => {
       fetch,
     })
 
-    await provider.complete({ ...request, model: 'openai/gpt-4o-mini', temperature: 0.3, maxTokens: 128 })
+    await provider.complete({
+      ...request,
+      model: 'openai/gpt-4o-mini',
+      temperature: 0.3,
+      maxTokens: 128,
+    })
 
     const [url, init] = fetch.mock.calls[0]
     // Trailing slash on baseUrl is normalized.
@@ -292,7 +298,11 @@ describe('OpenRouterProvider.chatComplete', () => {
             message: {
               content: null,
               tool_calls: [
-                { id: 'c', type: 'function', function: { name: 'read_document', arguments: '{not json' } },
+                {
+                  id: 'c',
+                  type: 'function',
+                  function: { name: 'read_document', arguments: '{not json' },
+                },
               ],
             },
             finish_reason: 'tool_calls',
@@ -342,7 +352,9 @@ describe('OpenRouterProvider.chatComplete', () => {
         {
           role: 'assistant',
           content: null,
-          toolCalls: [{ id: 'call_9', name: 'replace_text', arguments: { find: 'a', replace: 'b' } }],
+          toolCalls: [
+            { id: 'call_9', name: 'replace_text', arguments: { find: 'a', replace: 'b' } },
+          ],
         },
         { role: 'tool', toolCallId: 'call_9', content: 'Replaced "a" with "b".' },
       ],
@@ -401,8 +413,9 @@ describe('OpenRouterProvider.chatComplete', () => {
   })
 
   it('throws AiProviderError with status and message on non-2xx', async () => {
-    const fetch = vi.fn(async () =>
-      new Response(JSON.stringify({ error: { message: 'bad request' } }), { status: 400 }),
+    const fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ error: { message: 'bad request' } }), { status: 400 }),
     )
     const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
 
@@ -429,5 +442,246 @@ describe('OpenRouterProvider.chatComplete', () => {
 
     await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
     expect(fetch.mock.calls[0][1].signal).toBe(controller.signal)
+  })
+})
+
+/** An SSE data frame carrying a streamed chat chunk (delta + optional finish_reason). */
+function chatFrame(delta: unknown, finishReason?: string | null): string {
+  const choice: Record<string, unknown> = { delta }
+  if (finishReason !== undefined) {
+    choice.finish_reason = finishReason
+  }
+  return `data: ${JSON.stringify({ choices: [choice] })}\n\n`
+}
+
+async function collectEvents(iterable: AsyncIterable<ChatStreamEvent>): Promise<ChatStreamEvent[]> {
+  const out: ChatStreamEvent[] = []
+  for await (const event of iterable) {
+    out.push(event)
+  }
+  return out
+}
+
+describe('OpenRouterProvider.chatStream', () => {
+  it('streams a text-only turn and finishes with a done event', async () => {
+    const fetch = vi.fn(async () =>
+      sseResponse([
+        chatFrame({ content: 'Hello' }),
+        chatFrame({ content: ', world' }),
+        chatFrame({}, 'stop'),
+        'data: [DONE]\n\n',
+      ]),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const events = await collectEvents(provider.chatStream(chatRequest))
+
+    expect(events).toEqual([
+      { type: 'text', delta: 'Hello' },
+      { type: 'text', delta: ', world' },
+      { type: 'done', turn: { content: 'Hello, world', toolCalls: [], finishReason: 'stop' } },
+    ])
+    // Streaming request advertising tools would set stream:true; here no tools.
+    const body = JSON.parse(fetch.mock.calls[0][1].body as string)
+    expect(body.stream).toBe(true)
+    const headers = fetch.mock.calls[0][1].headers as Record<string, string>
+    expect(headers.Accept).toBe('text/event-stream')
+  })
+
+  it('reassembles a tool call from index-keyed fragments', async () => {
+    const fetch = vi.fn(async () =>
+      sseResponse([
+        // id and name arrive once; arguments accumulate across chunks.
+        chatFrame({
+          tool_calls: [
+            {
+              index: 0,
+              id: 'call_1',
+              type: 'function',
+              function: { name: 'replace_text', arguments: '' },
+            },
+          ],
+        }),
+        chatFrame({ tool_calls: [{ index: 0, function: { arguments: '{"find":"ca' } }] }),
+        chatFrame({ tool_calls: [{ index: 0, function: { arguments: 't","replace":"dog"}' } }] }),
+        chatFrame({}, 'tool_calls'),
+        'data: [DONE]\n\n',
+      ]),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const events = await collectEvents(
+      provider.chatStream({
+        ...chatRequest,
+        tools: [{ name: 'replace_text', description: 'x', parameters: {} }],
+      }),
+    )
+
+    const toolCalls = [
+      { id: 'call_1', name: 'replace_text', arguments: { find: 'cat', replace: 'dog' } },
+    ]
+    expect(events).toEqual([
+      { type: 'toolCalls', toolCalls },
+      { type: 'done', turn: { content: null, toolCalls, finishReason: 'tool_calls' } },
+    ])
+    // Tools serialized into the streaming body.
+    const body = JSON.parse(fetch.mock.calls[0][1].body as string)
+    expect(body.stream).toBe(true)
+    expect(body.tools[0].function.name).toBe('replace_text')
+  })
+
+  it('reassembles multiple tool calls keyed by index', async () => {
+    const fetch = vi.fn(async () =>
+      sseResponse([
+        chatFrame({
+          tool_calls: [
+            { index: 0, id: 'a', function: { name: 'replace_text', arguments: '{"find":"x"' } },
+          ],
+        }),
+        chatFrame({
+          tool_calls: [
+            {
+              index: 1,
+              id: 'b',
+              function: { name: 'insert_text', arguments: '{"position":"end"' },
+            },
+          ],
+        }),
+        chatFrame({ tool_calls: [{ index: 0, function: { arguments: ',"replace":"y"}' } }] }),
+        chatFrame({ tool_calls: [{ index: 1, function: { arguments: ',"text":"!"}' } }] }),
+        chatFrame({}, 'tool_calls'),
+        'data: [DONE]\n\n',
+      ]),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const events = await collectEvents(provider.chatStream(chatRequest))
+    const toolEvent = events.find(e => e.type === 'toolCalls') as Extract<
+      ChatStreamEvent,
+      { type: 'toolCalls' }
+    >
+
+    expect(toolEvent.toolCalls).toEqual([
+      { id: 'a', name: 'replace_text', arguments: { find: 'x', replace: 'y' } },
+      { id: 'b', name: 'insert_text', arguments: { position: 'end', text: '!' } },
+    ])
+  })
+
+  it('emits text deltas and then tool calls for a mixed turn', async () => {
+    const fetch = vi.fn(async () =>
+      sseResponse([
+        chatFrame({ content: 'Let me fix that. ' }),
+        chatFrame({
+          tool_calls: [
+            { index: 0, id: 'c1', function: { name: 'read_document', arguments: '{}' } },
+          ],
+        }),
+        chatFrame({}, 'tool_calls'),
+        'data: [DONE]\n\n',
+      ]),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const events = await collectEvents(provider.chatStream(chatRequest))
+
+    const toolCalls = [{ id: 'c1', name: 'read_document', arguments: {} }]
+    expect(events).toEqual([
+      { type: 'text', delta: 'Let me fix that. ' },
+      { type: 'toolCalls', toolCalls },
+      {
+        type: 'done',
+        turn: { content: 'Let me fix that. ', toolCalls, finishReason: 'tool_calls' },
+      },
+    ])
+  })
+
+  it('flags malformed accumulated tool-call arguments as chatComplete does', async () => {
+    const fetch = vi.fn(async () =>
+      sseResponse([
+        chatFrame({
+          tool_calls: [
+            { index: 0, id: 'c', function: { name: 'read_document', arguments: '{not ' } },
+          ],
+        }),
+        chatFrame({ tool_calls: [{ index: 0, function: { arguments: 'json' } }] }),
+        chatFrame({}, 'tool_calls'),
+        'data: [DONE]\n\n',
+      ]),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const events = await collectEvents(provider.chatStream(chatRequest))
+    const done = events.find(e => e.type === 'done') as Extract<ChatStreamEvent, { type: 'done' }>
+
+    expect(done.turn.toolCalls[0].arguments).toEqual({})
+    expect(done.turn.toolCalls[0].malformedArguments).toBe(true)
+  })
+
+  it('reassembles a chat frame split mid-line across network chunks', async () => {
+    const frame = chatFrame({ content: 'spanned' })
+    const mid = Math.floor(frame.length / 2)
+    const fetch = vi.fn(async () =>
+      sseResponse([
+        frame.slice(0, mid),
+        frame.slice(mid),
+        chatFrame({}, 'stop'),
+        'data: [DONE]\n\n',
+      ]),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const events = await collectEvents(provider.chatStream(chatRequest))
+
+    expect(events).toEqual([
+      { type: 'text', delta: 'spanned' },
+      { type: 'done', turn: { content: 'spanned', toolCalls: [], finishReason: 'stop' } },
+    ])
+  })
+
+  it('throws AiProviderError with status and message on non-2xx', async () => {
+    const fetch = vi.fn(
+      async () => new Response(JSON.stringify({ error: { message: 'nope' } }), { status: 503 }),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    await expect(collectEvents(provider.chatStream(chatRequest))).rejects.toMatchObject({
+      name: 'AiProviderError',
+      status: 503,
+      message: 'nope',
+    })
+  })
+
+  it('propagates an abort mid-stream without wrapping it', async () => {
+    const controller = new AbortController()
+    const fetch = vi.fn(async (_url: string, init: RequestInit) => {
+      const signal = init.signal as AbortSignal
+      const stream = new ReadableStream<Uint8Array>({
+        start(ctrl) {
+          ctrl.enqueue(encoder.encode(chatFrame({ content: 'first' })))
+          signal.addEventListener('abort', () => {
+            ctrl.error(new DOMException('Aborted', 'AbortError'))
+          })
+        },
+      })
+      return new Response(stream, { status: 200 })
+    })
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const received: ChatStreamEvent[] = []
+    await expect(
+      (async () => {
+        for await (const event of provider.chatStream({
+          ...chatRequest,
+          signal: controller.signal,
+        })) {
+          received.push(event)
+          controller.abort()
+        }
+      })(),
+    ).rejects.toMatchObject({ name: 'AbortError' })
+
+    // The first text delta was surfaced before the abort tore the stream down;
+    // no toolCalls/done events were emitted.
+    expect(received).toEqual([{ type: 'text', delta: 'first' }])
   })
 })

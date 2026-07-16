@@ -46,6 +46,13 @@ export interface AiAgentStorage {
   transcript: AiAgentTurn[]
   /** Number of tracked changes staged by the most recent review-mode run. */
   lastStagedCount: number
+  /**
+   * Assistant text streamed for the turn currently in flight, updated live as
+   * deltas arrive. Empty except while a streaming provider is producing text;
+   * cleared when the turn completes (its content then lands in `transcript`) and
+   * on abort/error. Always empty with a non-streaming provider.
+   */
+  streamingText: string
 }
 
 declare module '@tiptap/core' {

@@ -1,6 +1,12 @@
 import { Extension } from '@tiptap/core'
 import type { CommandProps, Editor } from '@tiptap/core'
-import type { AgentMessage, ChatCompletionProvider } from '@conote/ai-core'
+import type {
+  AgentMessage,
+  AssistantTurn,
+  ChatCompletionProvider,
+  ChatRequest,
+  StreamingChatCompletionProvider,
+} from '@conote/ai-core'
 
 import { createEditSession } from './session.js'
 import type { StagedChange } from './session.js'
@@ -9,20 +15,18 @@ import type { AiAgentOptions, AiAgentStorage } from './types.js'
 
 /** True for a signal-triggered abort, which must not be treated as an error. */
 function isAbortError(error: unknown): boolean {
-  return (
-    error instanceof DOMException
-      ? error.name === 'AbortError'
-      : Boolean(error) && (error as { name?: string }).name === 'AbortError'
-  )
+  return error instanceof DOMException
+    ? error.name === 'AbortError'
+    : Boolean(error) && (error as { name?: string }).name === 'AbortError'
 }
 
 /** Reads the runtime-discovered `aiChangesSet` command, if the AiChanges extension is present. */
-function getAiChangesSet(
-  editor: Editor,
-): ((changes: StagedChange[]) => boolean) | undefined {
-  const command = (editor.commands as unknown as {
-    aiChangesSet?: (changes: StagedChange[]) => boolean
-  }).aiChangesSet
+function getAiChangesSet(editor: Editor): ((changes: StagedChange[]) => boolean) | undefined {
+  const command = (
+    editor.commands as unknown as {
+      aiChangesSet?: (changes: StagedChange[]) => boolean
+    }
+  ).aiChangesSet
   return typeof command === 'function' ? command : undefined
 }
 
@@ -74,6 +78,7 @@ export const AiAgent = Extension.create<AiAgentOptions>({
       error: null,
       transcript: [],
       lastStagedCount: 0,
+      streamingText: '',
     }
   },
 
@@ -107,12 +112,10 @@ export const AiAgent = Extension.create<AiAgentOptions>({
           return true
         },
 
-      aiAgentAbort:
-        () =>
-        () => {
-          abortController?.abort()
-          return true
-        },
+      aiAgentAbort: () => () => {
+        abortController?.abort()
+        return true
+      },
 
       aiAgentReset:
         () =>
@@ -124,6 +127,7 @@ export const AiAgent = Extension.create<AiAgentOptions>({
           storage.state = 'idle'
           storage.error = null
           storage.lastStagedCount = 0
+          storage.streamingText = ''
           return true
         },
     }
@@ -156,7 +160,7 @@ async function runAgentLoop(
 
   try {
     for (let turn = 0; turn < maxTurns; turn++) {
-      const result = await provider.chatComplete({
+      const result = await runTurn(storage, provider, {
         messages,
         tools: AGENT_TOOLS,
         model: opts.defaultModel,
@@ -197,6 +201,8 @@ async function runAgentLoop(
     if (editor.isDestroyed) {
       return
     }
+    // Discard any partial in-flight streamed text; it never reaches the transcript.
+    storage.streamingText = ''
     if (isAbortError(error)) {
       // Abort: return to idle, keeping whatever the transcript already holds.
       storage.state = 'idle'
@@ -205,6 +211,43 @@ async function runAgentLoop(
     storage.error = error instanceof Error ? error : new Error(String(error))
     storage.state = 'error'
   }
+}
+
+/** True when the provider can stream a chat turn (has a `chatStream` method). */
+function isStreamingProvider(
+  provider: ChatCompletionProvider,
+): provider is StreamingChatCompletionProvider {
+  return typeof (provider as Partial<StreamingChatCompletionProvider>).chatStream === 'function'
+}
+
+/**
+ * Runs one chat turn. With a streaming provider it consumes `chatStream`, mirroring
+ * in-flight assistant text into `storage.streamingText` as deltas arrive and
+ * clearing it once the turn's `done` event lands; otherwise it falls back to the
+ * non-streaming `chatComplete` path unchanged.
+ */
+async function runTurn(
+  storage: AiAgentStorage,
+  provider: ChatCompletionProvider,
+  request: ChatRequest,
+): Promise<AssistantTurn> {
+  if (!isStreamingProvider(provider)) {
+    return provider.chatComplete(request)
+  }
+
+  storage.streamingText = ''
+  let turn: AssistantTurn | null = null
+  for await (const event of provider.chatStream(request)) {
+    if (event.type === 'text') {
+      storage.streamingText += event.delta
+    } else if (event.type === 'done') {
+      turn = event.turn
+    }
+  }
+  // The completed turn's content lands in the transcript by the caller; the live
+  // buffer is done streaming.
+  storage.streamingText = ''
+  return turn ?? { content: null, toolCalls: [], finishReason: null }
 }
 
 /** Stages review-mode changes via the runtime-discovered `aiChangesSet`. Returns the count staged. */

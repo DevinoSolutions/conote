@@ -94,3 +94,24 @@ export interface ChatCompletionProvider extends CompletionProvider {
   /** Runs one non-streaming chat turn and resolves with the assistant's reply. */
   chatComplete(request: ChatRequest): Promise<AssistantTurn>
 }
+
+/**
+ * An event emitted while streaming a chat turn. Text arrives as incremental
+ * `text` deltas; once generation stops, a single `toolCalls` event (when the
+ * turn requested any) is followed by a terminal `done` event carrying the
+ * fully assembled `AssistantTurn` — the same value `chatComplete` would return.
+ */
+export type ChatStreamEvent =
+  | { type: 'text'; delta: string }
+  | { type: 'toolCalls'; toolCalls: ToolCall[] }
+  | { type: 'done'; turn: AssistantTurn }
+
+/**
+ * A `ChatCompletionProvider` that can additionally stream a tool-calling chat
+ * turn, surfacing assistant text as it arrives before finishing with the same
+ * assembled `AssistantTurn` that `chatComplete` produces.
+ */
+export interface StreamingChatCompletionProvider extends ChatCompletionProvider {
+  /** Streams one chat turn: `text` deltas, then `toolCalls` (if any), then `done`. */
+  chatStream(request: ChatRequest): AsyncIterable<ChatStreamEvent>
+}

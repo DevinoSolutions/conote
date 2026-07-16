@@ -90,10 +90,15 @@ interface AiAgentStorage {
   error: Error | null
   transcript: Array<{ role: 'user' | 'assistant'; content: string }>
   lastStagedCount: number
+  streamingText: string
 }
 ```
 
 The transcript holds only the user- and assistant-visible turns; the internal tool call/result exchanges are not exposed.
+
+### Streaming replies
+
+When the configured provider implements `chatStream` (a `StreamingChatCompletionProvider`, such as `OpenRouterProvider` from `@conote/ai-core` v0.3.0+), the agent streams each turn and mirrors the in-flight assistant text into `streamingText` as it arrives. Bind a live "typing" bubble to that field; it clears once the turn completes (its content then lands in `transcript`) and on abort or error. Tool-call turns are unaffected — they still stage through `aiChangesSet` exactly as before. With a non-streaming provider `streamingText` stays empty and the loop behaves identically to the `chatComplete` path.
 
 ## The loop
 

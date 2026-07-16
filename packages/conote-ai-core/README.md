@@ -135,6 +135,37 @@ if (turn.toolCalls.length > 0) {
 
 `chatComplete` uses the same error and abort semantics as `complete()` — non-2xx throws `AiProviderError`, and an aborted `AbortSignal` rejects with the underlying `AbortError` unwrapped.
 
+### Streaming a tool-calling turn (v0.3.0+)
+
+`OpenRouterProvider` also implements `StreamingChatCompletionProvider`, adding `chatStream` for the same tool-aware turn as `chatComplete` but with assistant text surfaced as it arrives:
+
+```ts
+interface StreamingChatCompletionProvider extends ChatCompletionProvider {
+  chatStream(request: ChatRequest): AsyncIterable<ChatStreamEvent>
+}
+
+type ChatStreamEvent =
+  | { type: 'text'; delta: string }
+  | { type: 'toolCalls'; toolCalls: ToolCall[] }
+  | { type: 'done'; turn: AssistantTurn }
+```
+
+Text deltas arrive first as `text` events. When generation stops, a single `toolCalls` event is emitted (only when the turn requested tools), then a terminal `done` event carrying the fully assembled `AssistantTurn` — the same value `chatComplete` would return. Streamed `tool_calls` fragments are reassembled by index (id and name arrive once, `function.arguments` accumulates across chunks) and JSON-parsed defensively at the end, identical to `chatComplete`.
+
+```ts
+let text = ''
+let final: AssistantTurn | undefined
+for await (const event of provider.chatStream({ messages, tools })) {
+  if (event.type === 'text') {
+    text += event.delta // render incrementally
+  } else if (event.type === 'done') {
+    final = event.turn // content, toolCalls, finishReason
+  }
+}
+```
+
+Errors and aborts behave exactly like `stream()` — non-2xx throws `AiProviderError`, and an aborted `AbortSignal` tears the read down with the underlying `AbortError` unwrapped.
+
 ## Errors
 
 Non-2xx responses throw `AiProviderError` with the HTTP `status` and a best-effort message extracted from the response body.

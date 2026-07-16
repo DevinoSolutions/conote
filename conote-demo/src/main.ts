@@ -27,8 +27,18 @@ const SAMPLE_CONTENT = `
 // Two proofreading rules exercised by the "Proofread" panel below. Colors match
 // the decoration styling in style.css (via the --conote-ai-suggestion-color var).
 const SUGGESTION_RULES: AiSuggestionRule[] = [
-  { id: 'grammar', title: 'Spelling & grammar', prompt: 'Fix spelling mistakes and grammatical errors.', color: '#e11d48' },
-  { id: 'concise', title: 'Conciseness', prompt: 'Suggest more concise phrasing for wordy passages.', color: '#2563eb' },
+  {
+    id: 'grammar',
+    title: 'Spelling & grammar',
+    prompt: 'Fix spelling mistakes and grammatical errors.',
+    color: '#e11d48',
+  },
+  {
+    id: 'concise',
+    title: 'Conciseness',
+    prompt: 'Suggest more concise phrasing for wordy passages.',
+    color: '#2563eb',
+  },
 ]
 
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -265,7 +275,9 @@ function renderCard(
   accept.className = 'accept'
   accept.dataset.testid = `accept-${index}`
   accept.textContent = 'Accept'
-  accept.addEventListener('click', () => editor.chain().focus().aiSuggestionApply(suggestion.id).run())
+  accept.addEventListener('click', () =>
+    editor.chain().focus().aiSuggestionApply(suggestion.id).run(),
+  )
   const reject = document.createElement('button')
   reject.className = 'reject'
   reject.dataset.testid = `reject-${index}`
@@ -455,8 +467,7 @@ function renderAgent(): void {
   const storage = editor.storage.aiAgent as AiAgentStorage
   agentStatusEl.textContent = storage.state
   agentStatusEl.dataset.state = storage.state
-  agentErrorEl.textContent =
-    storage.state === 'error' && storage.error ? storage.error.message : ''
+  agentErrorEl.textContent = storage.state === 'error' && storage.error ? storage.error.message : ''
 
   agentSendBtn.disabled = storage.state === 'working'
 
@@ -470,6 +481,15 @@ function renderAgent(): void {
     storage.transcript.forEach(turn => {
       agentTranscriptEl.appendChild(renderBubble(turn))
     })
+  }
+
+  // While a streaming provider produces the in-flight reply, show it live.
+  if (storage.state === 'working' && storage.streamingText.length > 0) {
+    const streaming = document.createElement('div')
+    streaming.className = 'agent-bubble agent-bubble--assistant agent-bubble--streaming'
+    streaming.dataset.testid = 'agent-streaming'
+    streaming.textContent = storage.streamingText
+    agentTranscriptEl.appendChild(streaming)
   }
 
   // After a run finishes, surface how many edits were staged for review.
