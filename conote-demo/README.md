@@ -52,6 +52,43 @@ extension state (idle / pending / streaming / error).
   `@conote/extension-ai`, configured with an `OpenRouterProvider` in proxy mode
   (`baseUrl: 'http://localhost:8787/api'`, no `apiKey`).
 
+## E2E tests
+
+Real browser end-to-end tests (Playwright, Chromium) exercise all four AI
+features against the actual stack: Vite app → demo proxy → OpenRouter → live LLM.
+They live in `e2e/` and are managed by `npm` inside this folder (not the pnpm
+workspace).
+
+Requirements:
+
+- `OPENROUTER_API_KEY` available, either in the environment or in `conote-demo/.env`
+  (the same key the proxy uses). The Playwright config fails fast with a clear
+  message if neither is present. The key is never committed; `.env` stays gitignored.
+- Chromium installed once via `npx playwright install chromium`.
+
+Run:
+
+```bash
+cd conote-demo
+npm install
+npx playwright install chromium   # first time only
+npm run test:e2e                  # headless
+npm run test:e2e:headed           # watch it drive the browser
+```
+
+Playwright manages the server lifecycle: it starts the proxy (`node
+server/index.mjs`, port 8787) and the Vite dev server (port 5173) automatically,
+and reuses them if they are already running locally. Tests are serialized
+(`workers: 1`) to keep live-LLM calls deterministic and rate-limit friendly.
+
+The suite is served and navigated at `http://localhost:5173` (not `127.0.0.1`)
+because the proxy's CORS allowlist and the app's proxy base URL both use
+`localhost`; a mismatched host would fail the cross-origin LLM calls.
+
+Because LLM output is nondeterministic, tests assert **invariants** — state
+transitions, document-text deltas (read from `editor.state.doc.textContent`),
+decoration CSS classes, and panel `data-testid`s — never exact generated text.
+
 ## License
 
 MIT

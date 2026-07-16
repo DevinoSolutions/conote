@@ -1,3 +1,5 @@
 node_modules
 .env
 dist
+playwright-report
+test-results

@@ -9,7 +9,9 @@
     "dev": "vite",
     "build": "vite build",
     "server": "node server/index.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@tiptap/core": "^3.28.0",
@@ -17,6 +19,7 @@
     "@tiptap/starter-kit": "^3.28.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "^22.10.0",
     "typescript": "^5.6.3",
     "vite": "^6.0.0"

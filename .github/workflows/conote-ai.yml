@@ -1,0 +1,116 @@
+# CoNote AI features — unit tests + live-LLM E2E.
+# New file per fork rules: upstream tiptap workflows (build/notify/publish) are never touched.
+# Node 24 (not 22): the root package.json `engines.node` is ">=24" and upstream build.yml
+# pins Node 24 — using 22 would violate the workspace engines constraint on `pnpm install`.
+name: CoNote AI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/conote-*/**"
+      - "conote-demo/**"
+      - ".github/workflows/conote-ai.yml"
+  pull_request:
+    paths:
+      - "packages/conote-*/**"
+      - "conote-demo/**"
+      - ".github/workflows/conote-ai.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Unit tests (conote packages)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run vitest over conote packages
+        run: >-
+          ./node_modules/.bin/vitest run
+          packages/conote-ai-core
+          packages/conote-extension-ai
+          packages/conote-extension-ai-suggestion
+          packages/conote-extension-ai-changes
+          packages/conote-extension-ai-agent
+
+  e2e:
+    name: E2E tests (live OpenRouter)
+    runs-on: ubuntu-latest
+    needs: unit
+    timeout-minutes: 30
+    # Fork-PR guard: PRs opened from forks cannot read repository secrets, so
+    # OPENROUTER_API_KEY would be empty and the live-LLM suite would fail for
+    # reasons unrelated to the change. Skip (not fail) the whole job for fork PRs;
+    # pushes to main, same-repo PRs, and workflow_dispatch still run it. A second,
+    # value-based guard below covers the case where the secret is simply unset.
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Secrets cannot be referenced in a job-level `if:`, so surface presence as a
+      # step output and gate the real work on it. Empty secret => skip with a notice.
+      - name: Check for OpenRouter key
+        id: guard
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          if [ -n "$OPENROUTER_API_KEY" ]; then
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::OPENROUTER_API_KEY is not set — skipping live-LLM E2E suite."
+          fi
+
+      - name: Setup Node
+        if: steps.guard.outputs.has_key == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: conote-demo/package-lock.json
+
+      - name: Install demo dependencies
+        if: steps.guard.outputs.has_key == 'true'
+        working-directory: conote-demo
+        run: npm ci
+
+      - name: Install Playwright browser
+        if: steps.guard.outputs.has_key == 'true'
+        working-directory: conote-demo
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E suite
+        if: steps.guard.outputs.has_key == 'true'
+        working-directory: conote-demo
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ failure() && steps.guard.outputs.has_key == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: conote-demo/playwright-report/
+          retention-days: 7
