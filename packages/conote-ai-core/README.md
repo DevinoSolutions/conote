@@ -80,6 +80,61 @@ const stream = provider.stream({
 // controller.abort() to stop
 ```
 
+## Tool calling (v0.2.0+)
+
+`OpenRouterProvider` also implements `ChatCompletionProvider`, adding a non-streaming, tool-aware turn on top of the streaming completion surface:
+
+```ts
+interface ChatCompletionProvider extends CompletionProvider {
+  chatComplete(request: ChatRequest): Promise<AssistantTurn>
+}
+```
+
+You describe tools as JSON Schema and drive an agentic loop yourself: call `chatComplete`, run any tool calls it returns, feed the results back as messages, and repeat until it replies with plain content.
+
+```ts
+import { OpenRouterProvider } from '@conote/ai-core'
+import type { AgentMessage, ToolDefinition } from '@conote/ai-core'
+
+const provider = new OpenRouterProvider({ baseUrl: '/api/ai' })
+
+const tools: ToolDefinition[] = [
+  {
+    name: 'get_weather',
+    description: 'Get the current weather for a city.',
+    parameters: {
+      type: 'object',
+      properties: { city: { type: 'string' } },
+      required: ['city'],
+    },
+  },
+]
+
+const messages: AgentMessage[] = [{ role: 'user', content: 'What is the weather in Paris?' }]
+
+const turn = await provider.chatComplete({ messages, tools })
+
+if (turn.toolCalls.length > 0) {
+  // Record the assistant's request, then answer each tool call.
+  messages.push({ role: 'assistant', content: turn.content, toolCalls: turn.toolCalls })
+  for (const call of turn.toolCalls) {
+    // call.arguments is the JSON-parsed argument object ({} if the model sent malformed JSON).
+    const result = runTool(call.name, call.arguments)
+    messages.push({ role: 'tool', toolCallId: call.id, content: result })
+  }
+  // Call chatComplete again with the extended messages…
+}
+```
+
+### Message and turn shapes
+
+- `AgentMessage` is `ChatMessage | ToolResultMessage | AssistantToolCallMessage`.
+- Tool results serialize to `{ role: 'tool', tool_call_id, content }`; assistant tool-call turns serialize to a `tool_calls: [{ id, type: 'function', function: { name, arguments } }]` array (`arguments` a JSON string).
+- `AssistantTurn` is `{ content: string | null, toolCalls: ToolCall[], finishReason: string | null }`. A turn with tool calls usually has `content: null` and `finishReason: 'tool_calls'`.
+- Each `ToolCall.arguments` is JSON-parsed defensively: a malformed argument string yields `{}` and sets `malformedArguments: true` rather than throwing.
+
+`chatComplete` uses the same error and abort semantics as `complete()` — non-2xx throws `AiProviderError`, and an aborted `AbortSignal` rejects with the underlying `AbortError` unwrapped.
+
 ## Errors
 
 Non-2xx responses throw `AiProviderError` with the HTTP `status` and a best-effort message extracted from the response body.

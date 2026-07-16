@@ -1,6 +1,15 @@
 import { AiProviderError } from './errors.js'
 import { SseLineParser } from './sse.js'
-import type { ChatMessage, CompletionProvider, CompletionRequest } from './types.js'
+import type {
+  AgentMessage,
+  AssistantTurn,
+  ChatCompletionProvider,
+  ChatMessage,
+  ChatRequest,
+  CompletionRequest,
+  ToolCall,
+  ToolDefinition,
+} from './types.js'
 
 export interface OpenRouterProviderOptions {
   /** Dev only — a key in the browser is unsafe for prod. Prefer a proxy via `baseUrl`. */
@@ -26,12 +35,53 @@ interface ChatCompletionBody {
   max_tokens?: number
 }
 
+/** OpenAI wire shape for a single message sent to `/chat/completions`. */
+interface WireMessage {
+  role: string
+  content: string | null
+  tool_call_id?: string
+  tool_calls?: WireToolCall[]
+}
+
+interface WireToolCall {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+}
+
+interface WireTool {
+  type: 'function'
+  function: { name: string; description: string; parameters: Record<string, unknown> }
+}
+
+interface ChatBody {
+  model: string
+  messages: WireMessage[]
+  stream: false
+  tools?: WireTool[]
+  temperature?: number
+  max_tokens?: number
+}
+
+interface ChatCompletionResponse {
+  choices?: Array<{
+    message?: {
+      content?: string | null
+      tool_calls?: Array<{
+        id?: string
+        function?: { name?: string; arguments?: unknown }
+      }>
+    }
+    finish_reason?: string | null
+  }>
+}
+
 /**
  * OpenRouter completion provider. OpenRouter is OpenAI-chat-compatible, so this
  * adapter also works against any endpoint implementing that surface (including a
  * production proxy that injects the API key server-side).
  */
-export class OpenRouterProvider implements CompletionProvider {
+export class OpenRouterProvider implements ChatCompletionProvider {
   private readonly apiKey?: string
   private readonly baseUrl: string
   private readonly defaultModel: string
@@ -58,6 +108,33 @@ export class OpenRouterProvider implements CompletionProvider {
       result += chunk
     }
     return result
+  }
+
+  /**
+   * Runs one non-streaming, tool-aware chat turn. Messages are serialized to the
+   * OpenAI wire shape (tool results as `{role:'tool', tool_call_id, content}`,
+   * assistant tool-call turns with a `tool_calls` array) and the response is read
+   * from `choices[0].message`, with each tool call's `arguments` JSON-parsed
+   * defensively. Errors and aborts behave exactly like `complete()`.
+   */
+  async chatComplete(request: ChatRequest): Promise<AssistantTurn> {
+    const response = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: this.buildHeaders('application/json'),
+      body: JSON.stringify(this.buildChatBody(request)),
+      signal: request.signal,
+    })
+
+    if (!response.ok) {
+      throw await toProviderError(response)
+    }
+
+    const data = (await response.json()) as ChatCompletionResponse
+    const choice = data?.choices?.[0]
+    const message = choice?.message
+    const content = typeof message?.content === 'string' ? message.content : null
+    const toolCalls = (message?.tool_calls ?? []).map(parseToolCall)
+    return { content, toolCalls, finishReason: choice?.finish_reason ?? null }
   }
 
   async *stream(request: CompletionRequest): AsyncIterable<string> {
@@ -143,10 +220,28 @@ export class OpenRouterProvider implements CompletionProvider {
     return body
   }
 
-  private buildHeaders(): Record<string, string> {
+  private buildChatBody(request: ChatRequest): ChatBody {
+    const body: ChatBody = {
+      model: request.model ?? this.defaultModel,
+      messages: request.messages.map(toWireMessage),
+      stream: false,
+    }
+    if (request.tools && request.tools.length > 0) {
+      body.tools = request.tools.map(toWireTool)
+    }
+    if (request.temperature !== undefined) {
+      body.temperature = request.temperature
+    }
+    if (request.maxTokens !== undefined) {
+      body.max_tokens = request.maxTokens
+    }
+    return body
+  }
+
+  private buildHeaders(accept = 'text/event-stream'): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      Accept: 'text/event-stream',
+      Accept: accept,
       ...this.headers,
     }
     // Proxy mode sends no key; the proxy injects it server-side.
@@ -186,6 +281,71 @@ const DONE = Symbol('done')
 
 interface ChatCompletionChunk {
   choices?: Array<{ delta?: { content?: string } }>
+}
+
+/** Serializes an `AgentMessage` to the OpenAI wire shape. */
+function toWireMessage(message: AgentMessage): WireMessage {
+  if ('toolCalls' in message) {
+    return {
+      role: 'assistant',
+      content: message.content,
+      tool_calls: message.toolCalls.map(call => ({
+        id: call.id,
+        type: 'function',
+        function: { name: call.name, arguments: JSON.stringify(call.arguments) },
+      })),
+    }
+  }
+  if (message.role === 'tool') {
+    return { role: 'tool', content: message.content, tool_call_id: message.toolCallId }
+  }
+  return { role: message.role, content: message.content }
+}
+
+/** Serializes a `ToolDefinition` to the OpenAI `tools` wire shape. */
+function toWireTool(tool: ToolDefinition): WireTool {
+  return {
+    type: 'function',
+    function: { name: tool.name, description: tool.description, parameters: tool.parameters },
+  }
+}
+
+/** Parses one wire tool call, defensively JSON-parsing its arguments string. */
+function parseToolCall(raw: {
+  id?: string
+  function?: { name?: string; arguments?: unknown }
+}): ToolCall {
+  const rawArgs = raw?.function?.arguments
+  let args: Record<string, unknown> = {}
+  let malformed = false
+
+  if (typeof rawArgs === 'string') {
+    if (rawArgs.trim() !== '') {
+      try {
+        const parsed = JSON.parse(rawArgs)
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          args = parsed as Record<string, unknown>
+        } else {
+          malformed = true
+        }
+      } catch {
+        malformed = true
+      }
+    }
+  } else if (rawArgs && typeof rawArgs === 'object' && !Array.isArray(rawArgs)) {
+    // Some providers echo an already-parsed object rather than a JSON string.
+    args = rawArgs as Record<string, unknown>
+  }
+
+  const call: ToolCall = {
+    id: raw?.id ?? '',
+    name: raw?.function?.name ?? '',
+    arguments: args,
+  }
+  if (malformed) {
+    call.malformedArguments = true
+  }
+  return call
 }
 
 async function toProviderError(response: Response): Promise<AiProviderError> {

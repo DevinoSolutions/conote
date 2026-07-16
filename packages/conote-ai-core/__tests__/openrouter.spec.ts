@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { AiProviderError, OpenRouterProvider } from '../src/index.js'
-import type { CompletionRequest } from '../src/index.js'
+import type { ChatRequest, CompletionRequest } from '../src/index.js'
 
 const encoder = new TextEncoder()
 
@@ -214,5 +214,220 @@ describe('OpenRouterProvider', () => {
 
     const body = JSON.parse(fetch.mock.calls[0][1].body as string)
     expect(body.model).toBe('anthropic/claude-3.5-sonnet')
+  })
+})
+
+/** A non-streaming JSON chat-completions response. */
+function jsonResponse(payload: unknown, init: ResponseInit = {}): Response {
+  return new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+    ...init,
+  })
+}
+
+const chatRequest: ChatRequest = {
+  messages: [
+    { role: 'system', content: 'You are helpful.' },
+    { role: 'user', content: 'Rewrite the note.' },
+  ],
+}
+
+describe('OpenRouterProvider.chatComplete', () => {
+  it('parses a plain assistant reply and finishReason', async () => {
+    const fetch = vi.fn(async () =>
+      jsonResponse({
+        choices: [{ message: { content: 'Done.' }, finish_reason: 'stop' }],
+      }),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const turn = await provider.chatComplete(chatRequest)
+
+    expect(turn).toEqual({ content: 'Done.', toolCalls: [], finishReason: 'stop' })
+    // Non-streaming request.
+    const body = JSON.parse(fetch.mock.calls[0][1].body as string)
+    expect(body.stream).toBe(false)
+    // JSON, not SSE.
+    const headers = fetch.mock.calls[0][1].headers as Record<string, string>
+    expect(headers.Accept).toBe('application/json')
+  })
+
+  it('parses tool calls with JSON-string arguments', async () => {
+    const fetch = vi.fn(async () =>
+      jsonResponse({
+        choices: [
+          {
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: 'call_1',
+                  type: 'function',
+                  function: { name: 'replace_text', arguments: '{"find":"cat","replace":"dog"}' },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+      }),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const turn = await provider.chatComplete(chatRequest)
+
+    expect(turn.content).toBeNull()
+    expect(turn.finishReason).toBe('tool_calls')
+    expect(turn.toolCalls).toEqual([
+      { id: 'call_1', name: 'replace_text', arguments: { find: 'cat', replace: 'dog' } },
+    ])
+  })
+
+  it('falls back to {} and flags malformed tool-call arguments', async () => {
+    const fetch = vi.fn(async () =>
+      jsonResponse({
+        choices: [
+          {
+            message: {
+              content: null,
+              tool_calls: [
+                { id: 'c', type: 'function', function: { name: 'read_document', arguments: '{not json' } },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+      }),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const turn = await provider.chatComplete(chatRequest)
+
+    expect(turn.toolCalls[0].arguments).toEqual({})
+    expect(turn.toolCalls[0].malformedArguments).toBe(true)
+  })
+
+  it('treats empty-string arguments as {} without flagging them malformed', async () => {
+    const fetch = vi.fn(async () =>
+      jsonResponse({
+        choices: [
+          {
+            message: {
+              content: null,
+              tool_calls: [{ id: 'c', function: { name: 'read_document', arguments: '' } }],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+      }),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const turn = await provider.chatComplete(chatRequest)
+
+    expect(turn.toolCalls[0].arguments).toEqual({})
+    expect(turn.toolCalls[0].malformedArguments).toBeUndefined()
+  })
+
+  it('serializes tool results and assistant tool-call turns to the wire shape', async () => {
+    const fetch = vi.fn(async () =>
+      jsonResponse({ choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] }),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    await provider.chatComplete({
+      messages: [
+        { role: 'user', content: 'Fix it.' },
+        {
+          role: 'assistant',
+          content: null,
+          toolCalls: [{ id: 'call_9', name: 'replace_text', arguments: { find: 'a', replace: 'b' } }],
+        },
+        { role: 'tool', toolCallId: 'call_9', content: 'Replaced "a" with "b".' },
+      ],
+      tools: [
+        {
+          name: 'replace_text',
+          description: 'Replace text.',
+          parameters: { type: 'object', properties: { find: { type: 'string' } } },
+        },
+      ],
+    })
+
+    const body = JSON.parse(fetch.mock.calls[0][1].body as string)
+
+    // Assistant tool-call turn.
+    expect(body.messages[1]).toEqual({
+      role: 'assistant',
+      content: null,
+      tool_calls: [
+        {
+          id: 'call_9',
+          type: 'function',
+          function: { name: 'replace_text', arguments: '{"find":"a","replace":"b"}' },
+        },
+      ],
+    })
+    // Tool result.
+    expect(body.messages[2]).toEqual({
+      role: 'tool',
+      content: 'Replaced "a" with "b".',
+      tool_call_id: 'call_9',
+    })
+    // Tools serialized under function envelopes.
+    expect(body.tools).toEqual([
+      {
+        type: 'function',
+        function: {
+          name: 'replace_text',
+          description: 'Replace text.',
+          parameters: { type: 'object', properties: { find: { type: 'string' } } },
+        },
+      },
+    ])
+  })
+
+  it('omits tools from the body when none are provided', async () => {
+    const fetch = vi.fn(async () =>
+      jsonResponse({ choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] }),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    await provider.chatComplete(chatRequest)
+
+    const body = JSON.parse(fetch.mock.calls[0][1].body as string)
+    expect(body.tools).toBeUndefined()
+  })
+
+  it('throws AiProviderError with status and message on non-2xx', async () => {
+    const fetch = vi.fn(async () =>
+      new Response(JSON.stringify({ error: { message: 'bad request' } }), { status: 400 }),
+    )
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    await expect(provider.chatComplete(chatRequest)).rejects.toMatchObject({
+      name: 'AiProviderError',
+      status: 400,
+      message: 'bad request',
+    })
+    await expect(provider.chatComplete(chatRequest)).rejects.toBeInstanceOf(AiProviderError)
+  })
+
+  it('propagates an abort without wrapping it', async () => {
+    const controller = new AbortController()
+    const fetch = vi.fn(async (_url: string, init: RequestInit) => {
+      const signal = init.signal as AbortSignal
+      return new Promise<Response>((_resolve, reject) => {
+        signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+      })
+    })
+    const provider = new OpenRouterProvider({ apiKey: 'k', fetch })
+
+    const promise = provider.chatComplete({ ...chatRequest, signal: controller.signal })
+    controller.abort()
+
+    await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
+    expect(fetch.mock.calls[0][1].signal).toBe(controller.signal)
   })
 })

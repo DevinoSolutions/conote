@@ -1,14 +1,15 @@
 {
-  "name": "@conote/ai-core",
-  "version": "0.2.0",
-  "description": "Provider-agnostic LLM completion layer with an OpenRouter adapter. Part of CoNote, an open-source fork of Tiptap.",
+  "name": "@conote/extension-ai-agent",
+  "version": "0.1.0",
+  "description": "A conversational AI agent for Tiptap that reads the document and edits it through tool calls, staging its changes for review via @conote/extension-ai-changes. Part of CoNote, an open-source fork of Tiptap.",
   "keywords": [
     "conote",
+    "tiptap",
+    "tiptap extension",
     "ai",
     "llm",
-    "openrouter",
-    "completion",
-    "streaming"
+    "agent",
+    "tool calling"
   ],
   "homepage": "https://github.com/DevinoSolutions/CoNote",
   "bugs": {
@@ -18,7 +19,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/DevinoSolutions/CoNote",
-    "directory": "packages/conote-ai-core"
+    "directory": "packages/conote-extension-ai-agent"
   },
   "files": [
     "src",
@@ -41,5 +42,16 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch --sourcemap"
+  },
+  "dependencies": {
+    "@conote/ai-core": "workspace:^"
+  },
+  "devDependencies": {
+    "@tiptap/core": "workspace:^",
+    "@tiptap/pm": "workspace:^"
+  },
+  "peerDependencies": {
+    "@tiptap/core": "workspace:*",
+    "@tiptap/pm": "workspace:*"
   }
 }
