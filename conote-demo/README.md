@@ -8,6 +8,30 @@ The UI is a small React app built on `@tiptap/react` — `useEditor` /
 `EditorContent` mount the editor, a `BubbleMenu` (from `@tiptap/react/menus`)
 offers quick selection actions, and `useEditorState` selectors drive the panels.
 
+## UI & design
+
+The interface is CoNote's **own** design language: a dark-first "precision
+instrument" theme (deep navy-charcoal canvas, a teal signature accent, monospace
+UI chrome over a serif document surface). Layout is an app bar, the editor as the
+centerpiece, and a sticky right rail of AI panels (Edit-with-AI, Agent chat,
+Proofread review). It is responsive down to ~1024px and back.
+
+**Editor chrome was built from scratch, not vendored.** The spec offered vendoring
+the MIT "Simple Editor" pieces via `npx @tiptap/cli add simple-editor` as an
+option; that path was deliberately skipped. Simple Editor is a *formatting*
+toolbar template — this demo has no formatting toolbar, its surface is the four
+AI panels — so vendoring would have pulled a large tree of their components,
+SCSS, and brand-styled tokens that would then need stripping and re-skinning,
+raising the risk of carrying their styling. A clean hand-built shell was the
+lower-risk, higher-quality choice here.
+
+Everything visual is original: hand-written CSS in `src/style.css`, inline SVG
+icons drawn in `src/components/icons.tsx`, no component libraries, no external
+fonts, and **no code, CSS, markup, or assets from Tiptap's site or Pro products**.
+Public Tiptap pages were viewed only to study UX patterns (how streaming is
+indicated, how change review reads) — never copied. No Tiptap logos or brand
+colors are used.
+
 This demo is part of **CoNote**, an open-source fork of
 [Tiptap](https://github.com/ueberdosis/tiptap). It is **not affiliated with or
 endorsed by Tiptap GmbH**. MIT licensed.
