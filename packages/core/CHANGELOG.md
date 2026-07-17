@@ -1,5 +1,13 @@
 # Change Log
 
+## 3.28.1
+
+### Patch Changes
+
+- b4c5a2d: Fix input rules crashing when the matched text spans an inline atom node like a mention.
+- 0f63969: Fix `editor.$pos()` returning the wrong node inside container nodes, for example the list item instead of the list.
+  - @tiptap/pm@3.28.1
+
 ## 3.28.0
 
 ### Patch Changes

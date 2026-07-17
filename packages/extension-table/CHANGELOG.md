@@ -1,5 +1,15 @@
 # Change Log
 
+## 3.28.1
+
+### Patch Changes
+
+- 8649f2f: Keep line breaks inside table cells when serializing to markdown. Hard breaks and paragraph breaks in a cell are now written as `<br>` instead of being collapsed into a space, so they survive a parse/serialize round trip.
+- Updated dependencies [b4c5a2d]
+- Updated dependencies [0f63969]
+  - @tiptap/core@3.28.1
+  - @tiptap/pm@3.28.1
+
 ## 3.28.0
 
 ### Patch Changes
