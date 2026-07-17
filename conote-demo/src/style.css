@@ -148,6 +148,32 @@ header p {
   margin: 0.6em 0;
 }
 
+/* --- Selection bubble menu (quick AI actions) --- */
+
+.bubble-menu {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.bubble-menu button {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.bubble-menu button:hover {
+  border-color: var(--accent);
+}
+
 /* --- Agent panel --- */
 
 .agent {

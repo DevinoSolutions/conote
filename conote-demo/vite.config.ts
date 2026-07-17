@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 const fromRoot = (relativePath: string): string =>
   fileURLToPath(new URL(relativePath, import.meta.url))
@@ -8,14 +9,23 @@ const fromRoot = (relativePath: string): string =>
 // exercises the real extension without a build step, while staying fully
 // decoupled from the pnpm workspace and its lockfile.
 export default defineConfig({
+  plugins: [react()],
   server: {
     port: 5173,
   },
   resolve: {
+    // A single instance of each of these must be shared across the aliased
+    // monorepo source and the npm-installed packages (@tiptap/react, StarterKit,
+    // the bubble menu). Two React or two @tiptap/core copies would break hooks
+    // and ProseMirror instanceof checks.
+    dedupe: ['@tiptap/core', '@tiptap/pm', 'react', 'react-dom'],
     // Anchored regexes so these are EXACT matches — a prefix match would rewrite
     // subpaths like `@tiptap/core/jsx-runtime` into broken paths.
     alias: [
-      { find: /^@conote\/ai-core$/, replacement: fromRoot('../packages/conote-ai-core/src/index.ts') },
+      {
+        find: /^@conote\/ai-core$/,
+        replacement: fromRoot('../packages/conote-ai-core/src/index.ts'),
+      },
       {
         find: /^@conote\/extension-ai$/,
         replacement: fromRoot('../packages/conote-extension-ai/src/index.ts'),
@@ -36,7 +46,10 @@ export default defineConfig({
       // walking from it misses the demo's install. Pin the exact tiptap
       // specifiers it imports to the demo's copies (this also dedupes @tiptap/core
       // across StarterKit and the extension).
-      { find: /^@tiptap\/core$/, replacement: fromRoot('./node_modules/@tiptap/core/dist/index.js') },
+      {
+        find: /^@tiptap\/core$/,
+        replacement: fromRoot('./node_modules/@tiptap/core/dist/index.js'),
+      },
       {
         find: /^@tiptap\/pm\/state$/,
         replacement: fromRoot('./node_modules/@tiptap/pm/dist/state/index.js'),

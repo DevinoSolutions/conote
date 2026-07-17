@@ -4,6 +4,10 @@ A self-contained playground for CoNote's AI Generation feature: a Tiptap editor
 wired to `@conote/extension-ai`, streaming completions through a small Node proxy
 that keeps your OpenRouter API key server-side.
 
+The UI is a small React app built on `@tiptap/react` — `useEditor` /
+`EditorContent` mount the editor, a `BubbleMenu` (from `@tiptap/react/menus`)
+offers quick selection actions, and `useEditorState` selectors drive the panels.
+
 This demo is part of **CoNote**, an open-source fork of
 [Tiptap](https://github.com/ueberdosis/tiptap). It is **not affiliated with or
 endorsed by Tiptap GmbH**. MIT licensed.
@@ -48,9 +52,13 @@ extension state (idle / pending / streaming / error).
   `OPENROUTER_API_KEY` from `.env`, exposes `POST /api/chat/completions`, injects
   the `Authorization` header, and streams the SSE response back verbatim. This is
   the reference production pattern: the key never reaches the browser.
-- **`src/main.ts`** — builds a Tiptap editor with `StarterKit` and
-  `@conote/extension-ai`, configured with an `OpenRouterProvider` in proxy mode
-  (`baseUrl: 'http://localhost:8787/api'`, no `apiKey`).
+- **`src/main.tsx` / `src/App.tsx` / `src/components/*`** — a React app that
+  builds a Tiptap editor with `StarterKit` and the `@conote/extension-ai*`
+  extensions via `@tiptap/react`'s `useEditor`, configured with an
+  `OpenRouterProvider` in proxy mode (`baseUrl: 'http://localhost:8787/api'`, no
+  `apiKey`). Panels bind to extension storage with `useEditorState` selectors
+  (transaction-driven) plus a `useAiTick` hook that polls ~150 ms only while a
+  request is in flight — so streaming updates surface with zero polling at idle.
 
 ## E2E tests
 
