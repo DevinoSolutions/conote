@@ -36,7 +36,7 @@ jobs:
       # and `git rev-list main..upstream/main` have every commit to reason about.
       # persist-credentials (default true) leaves a token that can push the branch.
       - name: Checkout main (full history)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: main

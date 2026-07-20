@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -66,7 +66,7 @@ jobs:
     # value-based guard below covers the case where the secret is simply unset.
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Secrets cannot be referenced in a job-level `if:`, so surface presence as a
       # step output and gate the real work on it. Empty secret => skip with a notice.
