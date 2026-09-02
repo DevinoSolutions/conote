@@ -82,6 +82,7 @@ jobs:
           retention-days: 1
 
   check-linting-formatting:
+    permissions: write-all # GITHUB_TOKEN defaults + id-token for DevinoSolutions/artifact (OIDC)
     name: Check linting & formatting
     runs-on: ubuntu-latest
     needs: build-packages
@@ -102,6 +103,7 @@ jobs:
         run: pnpm run lint
 
   run-unit-tests:
+    permissions: write-all # GITHUB_TOKEN defaults + id-token for DevinoSolutions/artifact (OIDC)
     name: Run unit tests
     runs-on: ubuntu-latest
     needs: build-packages
