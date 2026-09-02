@@ -55,6 +55,7 @@ jobs:
           packages/conote-extension-ai-agent
 
   e2e:
+    permissions: write-all # GITHUB_TOKEN defaults + id-token for DevinoSolutions/artifact (OIDC)
     name: E2E tests (live OpenRouter)
     runs-on: ubuntu-latest
     needs: unit
@@ -109,7 +110,7 @@ jobs:
 
       - name: Upload Playwright report
         if: ${{ failure() && steps.guard.outputs.has_key == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: DevinoSolutions/artifact/upload@v1
         with:
           name: playwright-report
           path: conote-demo/playwright-report/
