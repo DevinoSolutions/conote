@@ -11,6 +11,7 @@ on:
       - v2
 
 permissions:
+  id-token: write
   contents: read
 
 concurrency:
@@ -62,7 +63,7 @@ jobs:
         run: tar -cf package-dist-artifacts.tar packages/*/dist packages-deprecated/*/dist
 
       - name: Upload package dist artifacts
-        uses: actions/upload-artifact@v7
+        uses: DevinoSolutions/artifact/upload@v1
         with:
           name: package-dist-artifacts
           if-no-files-found: error
@@ -97,7 +98,7 @@ jobs:
         run: pnpm install --frozen-lockfile --strict-peer-dependencies
 
       - name: Download package dist artifacts
-        uses: actions/download-artifact@v8
+        uses: DevinoSolutions/artifact/download@v1
         with:
           name: package-dist-artifacts
           path: .

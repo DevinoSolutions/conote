@@ -11,7 +11,7 @@ runs:
   using: composite
   steps:
     - name: Download build artifacts
-      uses: actions/download-artifact@v8
+      uses: DevinoSolutions/artifact/download@v1
       with:
         name: ${{ inputs.artifact-name }}
         path: /tmp/build-output
