@@ -102,7 +102,7 @@ jobs:
             # is deliberate so CoNote CI runs and a human approves before merge.
             git push origin "$BRANCH"
 
-            COMMITS=$(git log --oneline main..upstream/main | head -50)
+            COMMITS=$(git log --oneline main..upstream/main | awk 'NR<=50')
             gh pr create \
               --base main \
               --head "$BRANCH" \
