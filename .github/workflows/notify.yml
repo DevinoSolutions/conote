@@ -9,6 +9,7 @@ jobs:
     name: Send release to Discord
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -25,6 +26,7 @@ jobs:
     name: Send release to Slack
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions: {}
     steps:
       - name: Send Slack release notification
