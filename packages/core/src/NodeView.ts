@@ -51,7 +51,14 @@ export class NodeView<
     this.innerDecorations = props.innerDecorations
     this.view = props.view
     this.HTMLAttributes = props.HTMLAttributes
-    this.getPos = props.getPos
+    this.getPos = () => {
+      // ProseMirror throws while this node view is not attached to its parent yet.
+      try {
+        return props.getPos()
+      } catch {
+        return undefined
+      }
+    }
     this.mount()
   }
 
@@ -287,7 +294,7 @@ export class NodeView<
     // see: https://github.com/ueberdosis/tiptap/issues/1214
     // see: https://github.com/ueberdosis/tiptap/issues/2534
     if (
-      this.dom.contains(mutation.target) &&
+      this.contentDOM.contains(mutation.target) &&
       mutation.type === 'childList' &&
       (isiOS() || isAndroid()) &&
       this.editor.isFocused
