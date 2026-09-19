@@ -11,8 +11,9 @@ on:
     branches:
       - main
 
+# Least privilege by default. Jobs that need OIDC (DevinoSolutions/artifact, npm
+# trusted publishing) opt into `id-token: write` themselves.
 permissions:
-  id-token: write
   contents: read
 
 concurrency:
@@ -45,6 +46,11 @@ jobs:
     timeout-minutes: 30
     needs: resolve-config
     if: needs.resolve-config.outputs.configured == 'true'
+    # `id-token: write` mints the OIDC token DevinoSolutions/artifact exchanges for
+    # self-hosted MinIO credentials on the upload step below.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
 
@@ -66,7 +72,7 @@ jobs:
         run: tar -cf package-dist-artifacts.tar packages/*/dist
 
       - name: Upload package dist artifacts
-        uses: DevinoSolutions/artifact/upload@v1
+        uses: DevinoSolutions/artifact/upload@739b3abd2f5f7bd4db8106bda6513ae94020c9e6 # v1.1.0 (current target of the moving v1 tag)
         with:
           name: package-dist-artifacts
           if-no-files-found: error
@@ -100,7 +106,7 @@ jobs:
         run: vp install --frozen-lockfile -- --strict-peer-dependencies
 
       - name: Download package dist artifacts
-        uses: DevinoSolutions/artifact/download@v1
+        uses: DevinoSolutions/artifact/download@739b3abd2f5f7bd4db8106bda6513ae94020c9e6 # v1.1.0 (current target of the moving v1 tag)
         with:
           name: package-dist-artifacts
           path: .
