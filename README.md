@@ -25,12 +25,12 @@ The AI command surface in CoNote is designed to feel familiar to developers who 
 
 ## AI features
 
-| Feature | Description | Status |
-| --- | --- | --- |
-| AI Generation | Text generation and editing commands (complete, rewrite, summarize, adjust tone, translate, custom prompt) that stream into the document. | Available — `@conote/extension-ai` |
-| AI Suggestion | Inline AI-driven suggestions surfaced in the editor with accept/reject. | Available — `@conote/extension-ai-suggestion` |
-| AI Changes | Review and accept/reject AI-proposed changes as tracked diffs before they touch the document. | Available — `@conote/extension-ai-changes` |
-| AI Agent | An AI agent that can read and edit the document via tool calls, with its edits staged for review. | Available — `@conote/extension-ai-agent` |
+| Feature       | Description                                                                                                                               | Status                                        |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| AI Generation | Text generation and editing commands (complete, rewrite, summarize, adjust tone, translate, custom prompt) that stream into the document. | Available — `@conote/extension-ai`            |
+| AI Suggestion | Inline AI-driven suggestions surfaced in the editor with accept/reject.                                                                   | Available — `@conote/extension-ai-suggestion` |
+| AI Changes    | Review and accept/reject AI-proposed changes as tracked diffs before they touch the document.                                             | Available — `@conote/extension-ai-changes`    |
+| AI Agent      | An AI agent that can read and edit the document via tool calls, with its edits staged for review.                                         | Available — `@conote/extension-ai-agent`      |
 
 All of these are, or will be, implemented independently and provider-agnostically. The included OpenRouter adapter is one backend; you can supply your own.
 
@@ -38,32 +38,45 @@ All of these are, or will be, implemented independently and provider-agnosticall
 
 The CoNote-specific packages are maintained under the monorepo alongside the upstream `@tiptap/*` packages. They are MIT-licensed and written from scratch.
 
-| Package | Location | Description |
-| --- | --- | --- |
-| `@conote/ai-core` | `packages/conote-ai-core` | Provider-agnostic AI layer. Defines the completion-provider interface (streaming and non-streaming) and ships an OpenRouter adapter. No editor or provider-specific code leaks across the interface. |
-| `@conote/extension-ai` | `packages/conote-extension-ai` | Tiptap extension implementing AI Generation. Exposes editor commands that stream tokens into the document via ProseMirror transactions, with abort support and state for UI binding. |
-| `@conote/extension-ai-suggestion` | `packages/conote-extension-ai-suggestion` | Rule-based proofreading suggestions rendered as inline decorations, individually or collectively accept/rejectable. |
-| `@conote/extension-ai-changes` | `packages/conote-extension-ai-changes` | LLM-proposed edits shown as reviewable tracked changes (word-level diff); the document is not modified until a change is accepted. |
-| `@conote/extension-ai-agent` | `packages/conote-extension-ai-agent` | Conversational agent that reads and edits the document via tool calls; by default its edits are staged through the AI Changes review flow. |
+| Package                           | Location                                  | Description                                                                                                                                                                                          |
+| --------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@conote/ai-core`                 | `packages/conote-ai-core`                 | Provider-agnostic AI layer. Defines the completion-provider interface (streaming and non-streaming) and ships an OpenRouter adapter. No editor or provider-specific code leaks across the interface. |
+| `@conote/extension-ai`            | `packages/conote-extension-ai`            | Tiptap extension implementing AI Generation. Exposes editor commands that stream tokens into the document via ProseMirror transactions, with abort support and state for UI binding.                 |
+| `@conote/extension-ai-suggestion` | `packages/conote-extension-ai-suggestion` | Rule-based proofreading suggestions rendered as inline decorations, individually or collectively accept/rejectable.                                                                                  |
+| `@conote/extension-ai-changes`    | `packages/conote-extension-ai-changes`    | LLM-proposed edits shown as reviewable tracked changes (word-level diff); the document is not modified until a change is accepted.                                                                   |
+| `@conote/extension-ai-agent`      | `packages/conote-extension-ai-agent`      | Conversational agent that reads and edits the document via tool calls; by default its edits are staged through the AI Changes review flow.                                                           |
 
 A runnable playground for all of the above lives in [`conote-demo/`](conote-demo/), including a small proxy server that keeps your LLM API key server-side.
 
 ## Development
 
-CoNote uses the same tooling as upstream Tiptap. The monorepo is managed with [pnpm](https://pnpm.io/). See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guidelines.
+CoNote uses the same tooling as upstream Tiptap. The monorepo is managed with [Vite+](https://vite.plus) (`vp`), which drives [pnpm](https://pnpm.io/) for installs, builds each package with `vp pack`, and runs the unit suites with `vp test`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guidelines.
 
 ```bash
 # Install dependencies
-pnpm install
+vp install
 
 # Build all packages
-pnpm build
+vp run build
 
 # Run tests
-pnpm test
+vp run test:unit
 ```
 
-The demos app can be run locally with `pnpm dev`. New demos are scaffolded with `pnpm run make:demo` (see [CONTRIBUTING.md](CONTRIBUTING.md) for details).
+To work on the CoNote AI packages alone, build and test just those:
+
+```bash
+vp run --filter "@conote/*" build
+
+vp test \
+  packages/conote-ai-core \
+  packages/conote-extension-ai \
+  packages/conote-extension-ai-suggestion \
+  packages/conote-extension-ai-changes \
+  packages/conote-extension-ai-agent
+```
+
+The demos app can be run locally with `vp run dev`. New demos are scaffolded with `vp run make:demo` (see [CONTRIBUTING.md](CONTRIBUTING.md) for details).
 
 ## Staying in sync with upstream
 
