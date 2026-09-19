@@ -29,10 +29,14 @@ export const AGENT_TOOLS: ToolDefinition[] = [
       type: 'object',
       properties: {
         find: { type: 'string', description: 'Exact text to find in the document.' },
-        replace: { type: 'string', description: 'Text to replace it with (empty string to delete).' },
+        replace: {
+          type: 'string',
+          description: 'Text to replace it with (empty string to delete).',
+        },
         before_context: {
           type: 'string',
-          description: 'Optional text immediately preceding the target, used to pick the right occurrence.',
+          description:
+            'Optional text immediately preceding the target, used to pick the right occurrence.',
         },
       },
       required: ['find', 'replace'],

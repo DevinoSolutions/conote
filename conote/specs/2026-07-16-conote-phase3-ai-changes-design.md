@@ -15,9 +15,9 @@
 ```ts
 interface AiChange {
   id: string
-  range: { from: number; to: number }  // ProseMirror range of the OLD text (empty for pure insertions)
-  oldText: string                       // '' for pure insertion
-  newText: string                       // '' for pure deletion
+  range: { from: number; to: number } // ProseMirror range of the OLD text (empty for pure insertions)
+  oldText: string // '' for pure insertion
+  newText: string // '' for pure deletion
 }
 ```
 
@@ -32,6 +32,7 @@ A change set is produced by diffing the current text against the LLM's rewrite. 
 ### Preview rendering (document unchanged)
 
 A ProseMirror plugin renders each change without touching the document:
+
 - **Deletion part:** inline decoration over `range` with class `conote-ai-change-del` (strikethrough, red tint).
 - **Insertion part:** widget decoration at `range.to` with class `conote-ai-change-ins` (green tint) whose DOM node shows `newText`.
 - Selected change gets `--selected` modifier classes.

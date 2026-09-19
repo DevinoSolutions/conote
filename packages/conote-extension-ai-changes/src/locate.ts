@@ -80,7 +80,10 @@ function positionAtOffset(index: DocTextIndex, offset: number): number | null {
  * Returns `null` when the hunk touches a block separator (i.e. would span a block
  * boundary) or cannot be placed.
  */
-export function anchorHunk(index: DocTextIndex, hunk: DiffHunk): { from: number; to: number } | null {
+export function anchorHunk(
+  index: DocTextIndex,
+  hunk: DiffHunk,
+): { from: number; to: number } | null {
   const { oldStart, oldEnd } = hunk
   if (oldStart === oldEnd) {
     const pos = positionAtOffset(index, oldStart)

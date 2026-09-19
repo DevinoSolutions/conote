@@ -8,12 +8,14 @@
 :root {
   color-scheme: dark;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "Cascadia Mono", "SF Mono",
-    "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
-  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-    Georgia, Cambria, "Times New Roman", serif;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    ui-monospace, 'Cascadia Code', 'Cascadia Mono', 'SF Mono', 'JetBrains Mono', Consolas,
+    'Liberation Mono', Menlo, monospace;
+  --font-serif:
+    'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, Cambria,
+    'Times New Roman', serif;
 
   /* surfaces */
   --bg: #090c12;
@@ -44,8 +46,7 @@
   --r-lg: 18px;
   --pill: 999px;
 
-  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
-    0 18px 40px -24px rgba(0, 0, 0, 0.75);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.75);
   --shadow-pop: 0 12px 34px -10px rgba(0, 0, 0, 0.7);
   --ring: 0 0 0 3px color-mix(in srgb, var(--accent) 34%, transparent);
 
@@ -71,8 +72,7 @@
     --accent-ink: #ffffff;
     --del: #d83a4c;
     --warn: #b47a10;
-    --shadow-card: 0 1px 2px rgba(20, 26, 36, 0.06),
-      0 14px 30px -22px rgba(20, 26, 36, 0.35);
+    --shadow-card: 0 1px 2px rgba(20, 26, 36, 0.06), 0 14px 30px -22px rgba(20, 26, 36, 0.35);
   }
 }
 
@@ -97,8 +97,16 @@ body {
   text-rendering: optimizeLegibility;
   min-height: 100vh;
   background-image:
-    radial-gradient(1100px 560px at 8% -12%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 62%),
-    radial-gradient(820px 460px at 102% -4%, color-mix(in srgb, var(--info) 9%, transparent), transparent 58%);
+    radial-gradient(
+      1100px 560px at 8% -12%,
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      820px 460px at 102% -4%,
+      color-mix(in srgb, var(--info) 9%, transparent),
+      transparent 58%
+    );
   background-attachment: fixed;
 }
 
@@ -248,8 +256,12 @@ body {
   border-radius: var(--r-sm);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
-    transform 0.08s ease, box-shadow 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.08s ease,
+    box-shadow 0.15s ease;
 }
 
 .btn svg {
@@ -375,7 +387,9 @@ body {
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .field:focus-within {
@@ -446,7 +460,7 @@ body {
   color: var(--fg-2);
 }
 
-.statuspill[data-state="idle"] .dot {
+.statuspill[data-state='idle'] .dot {
   background: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
@@ -465,16 +479,16 @@ body {
   color: var(--warn);
 }
 
-.statuspill[data-state="error"] {
+.statuspill[data-state='error'] {
   border-color: color-mix(in srgb, var(--del) 48%, transparent);
   background: color-mix(in srgb, var(--del) 12%, var(--surface-2));
 }
 
-.statuspill[data-state="error"] .dot {
+.statuspill[data-state='error'] .dot {
   background: var(--del);
 }
 
-.statuspill[data-state="error"] .statuspill-text {
+.statuspill[data-state='error'] .statuspill-text {
   color: var(--del);
 }
 
@@ -565,7 +579,11 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--r);
   background: var(--surface);
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent) 4%, transparent), transparent 120px);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 4%, transparent),
+    transparent 120px
+  );
   padding: 10px 30px 26px;
   min-height: 420px;
   box-shadow: var(--shadow-card);
@@ -706,7 +724,9 @@ body {
   border: none;
   border-radius: var(--r-xs);
   cursor: pointer;
-  transition: background 0.13s ease, color 0.13s ease;
+  transition:
+    background 0.13s ease,
+    color 0.13s ease;
 }
 
 .bubble-btn svg {
@@ -1073,7 +1093,10 @@ body {
   border-radius: var(--r-sm);
   background: var(--surface-2);
   overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
 }
 
 .card:hover {
@@ -1086,7 +1109,8 @@ body {
 
 .card--selected {
   border-color: var(--rule-color, var(--accent));
-  box-shadow: 0 0 0 1px var(--rule-color, var(--accent)),
+  box-shadow:
+    0 0 0 1px var(--rule-color, var(--accent)),
     0 8px 22px -14px color-mix(in srgb, var(--rule-color, var(--accent)) 80%, transparent);
   background: color-mix(in srgb, var(--rule-color, var(--accent)) 8%, var(--surface-2));
 }
@@ -1178,7 +1202,10 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--r-xs);
   cursor: pointer;
-  transition: background 0.13s ease, border-color 0.13s ease, color 0.13s ease;
+  transition:
+    background 0.13s ease,
+    border-color 0.13s ease,
+    color 0.13s ease;
 }
 
 .mini svg {

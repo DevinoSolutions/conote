@@ -46,25 +46,25 @@ accept/reject commands as the user decides.
 
 ## Options
 
-| Option | Type | Description |
-| --- | --- | --- |
-| `provider` | `CompletionProvider` | **Required.** Performs completions. |
-| `defaultModel` | `string` | Model used when a proposal does not override it. |
-| `temperature` | `number` | Sampling temperature used when a proposal does not override it. |
+| Option         | Type                 | Description                                                     |
+| -------------- | -------------------- | --------------------------------------------------------------- |
+| `provider`     | `CompletionProvider` | **Required.** Performs completions.                             |
+| `defaultModel` | `string`             | Model used when a proposal does not override it.                |
+| `temperature`  | `number`             | Sampling temperature used when a proposal does not override it. |
 
 ## Commands
 
 All commands live in the `aiChanges` namespace.
 
-| Command | Behavior |
-| --- | --- |
-| `aiChangesPropose({ prompt, model?, temperature? })` | Send the selection (or whole doc) to the provider and stage the diff. Single-flight: returns `false` while a proposal is in progress. |
-| `aiChangesAccept(id)` | Replace the change's range with its `newText`, drop it, and remap the rest. |
-| `aiChangesReject(id)` | Drop one change without changing the document. |
-| `aiChangesAcceptAll()` | Accept every change in one transaction (equivalent to the full rewrite). |
-| `aiChangesRejectAll()` | Drop every change without changing the document. |
-| `aiChangesSelect(id \| null)` | Mark a change selected, or clear the selection. |
-| `aiChangesSet(changes)` | Stage changes programmatically. Each is `Omit<AiChange, 'id'>`; entries with an out-of-bounds range or an `oldText` that does not match the document are dropped. |
+| Command                                              | Behavior                                                                                                                                                          |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aiChangesPropose({ prompt, model?, temperature? })` | Send the selection (or whole doc) to the provider and stage the diff. Single-flight: returns `false` while a proposal is in progress.                             |
+| `aiChangesAccept(id)`                                | Replace the change's range with its `newText`, drop it, and remap the rest.                                                                                       |
+| `aiChangesReject(id)`                                | Drop one change without changing the document.                                                                                                                    |
+| `aiChangesAcceptAll()`                               | Accept every change in one transaction (equivalent to the full rewrite).                                                                                          |
+| `aiChangesRejectAll()`                               | Drop every change without changing the document.                                                                                                                  |
+| `aiChangesSelect(id \| null)`                        | Mark a change selected, or clear the selection.                                                                                                                   |
+| `aiChangesSet(changes)`                              | Stage changes programmatically. Each is `Omit<AiChange, 'id'>`; entries with an out-of-bounds range or an `oldText` that does not match the document are dropped. |
 
 ## Data model
 
@@ -72,8 +72,8 @@ All commands live in the `aiChanges` namespace.
 interface AiChange {
   id: string
   range: { from: number; to: number } // ProseMirror range of the old text (from === to for a pure insertion)
-  oldText: string                      // '' for a pure insertion
-  newText: string                      // '' for a pure deletion
+  oldText: string // '' for a pure insertion
+  newText: string // '' for a pure deletion
 }
 ```
 
@@ -85,7 +85,7 @@ The extension exposes its state through `editor.storage.aiChanges`:
 interface AiChangesStorage {
   state: 'idle' | 'loading' | 'error'
   error: Error | null
-  changes: AiChange[]   // mirror of plugin state, in document order
+  changes: AiChange[] // mirror of plugin state, in document order
   selectedId: string | null
 }
 ```
@@ -96,12 +96,12 @@ The authoritative source is the ProseMirror plugin; storage is refreshed after e
 
 Preview decorations are unstyled by default — style these hooks yourself. No CSS is bundled.
 
-| Hook | Applied to |
-| --- | --- |
-| `.conote-ai-change-del` | The deletion (old text) part of a change. |
-| `.conote-ai-change-ins` | The insertion (new text) part of a change, rendered as a widget. |
-| `.conote-ai-change-del--selected` / `.conote-ai-change-ins--selected` | The parts of the selected change. |
-| `[data-change-id="<id>"]` | Both parts of a specific change. |
+| Hook                                                                  | Applied to                                                       |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `.conote-ai-change-del`                                               | The deletion (old text) part of a change.                        |
+| `.conote-ai-change-ins`                                               | The insertion (new text) part of a change, rendered as a widget. |
+| `.conote-ai-change-del--selected` / `.conote-ai-change-ins--selected` | The parts of the selected change.                                |
+| `[data-change-id="<id>"]`                                             | Both parts of a specific change.                                 |
 
 ```css
 .conote-ai-change-del {

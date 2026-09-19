@@ -13,14 +13,19 @@
 ### Data model
 
 ```ts
-interface AiSuggestionRule { id: string; title: string; prompt: string; color?: string }
+interface AiSuggestionRule {
+  id: string
+  title: string
+  prompt: string
+  color?: string
+}
 interface AiSuggestion {
-  id: string                 // generated
+  id: string // generated
   ruleId: string
-  range: { from: number; to: number }   // ProseMirror positions, remapped on edits
-  deleteText: string         // exact doc text to replace
+  range: { from: number; to: number } // ProseMirror positions, remapped on edits
+  deleteText: string // exact doc text to replace
   replacementText: string
-  note?: string              // model's short explanation
+  note?: string // model's short explanation
 }
 ```
 

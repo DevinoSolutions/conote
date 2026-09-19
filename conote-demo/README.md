@@ -18,7 +18,7 @@ Proofread review). It is responsive down to ~1024px and back.
 
 **Editor chrome was built from scratch, not vendored.** The spec offered vendoring
 the MIT "Simple Editor" pieces via `npx @tiptap/cli add simple-editor` as an
-option; that path was deliberately skipped. Simple Editor is a *formatting*
+option; that path was deliberately skipped. Simple Editor is a _formatting_
 toolbar template — this demo has no formatting toolbar, its surface is the four
 AI panels — so vendoring would have pulled a large tree of their components,
 SCSS, and brand-styled tokens that would then need stripping and re-skinning,

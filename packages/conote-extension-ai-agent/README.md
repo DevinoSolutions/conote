@@ -51,11 +51,11 @@ AiAgent.configure({ provider, applyMode: 'direct' })
 
 All editing is text-anchored (never character offsets), so quotes survive edits elsewhere in the document:
 
-| Tool | Arguments | Effect |
-| --- | --- | --- |
-| `read_document` | — | Returns the document as plain text (paragraphs separated by newlines). |
-| `replace_text` | `{ find, replace, before_context? }` | Replaces the first occurrence of `find`; `before_context` disambiguates repeats; empty `replace` deletes. |
-| `insert_text` | `{ position: 'start' \| 'end', text }` | Inserts text at the document start or end. |
+| Tool            | Arguments                              | Effect                                                                                                    |
+| --------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `read_document` | —                                      | Returns the document as plain text (paragraphs separated by newlines).                                    |
+| `replace_text`  | `{ find, replace, before_context? }`   | Replaces the first occurrence of `find`; `before_context` disambiguates repeats; empty `replace` deletes. |
+| `insert_text`   | `{ position: 'start' \| 'end', text }` | Inserts text at the document start or end.                                                                |
 
 In review mode, `read_document` returns the **virtual** text (the base document with the edits staged so far applied) so the model reasons consistently within a run; edit tools always report success even though the real document is untouched until you accept the staged changes.
 
@@ -63,22 +63,22 @@ In review mode, `read_document` returns the **virtual** text (the base document 
 
 ```ts
 interface AiAgentOptions {
-  provider: ChatCompletionProvider   // required
+  provider: ChatCompletionProvider // required
   defaultModel?: string
   temperature?: number
-  systemPrompt?: string              // overrides the built-in prompt
-  applyMode?: 'review' | 'direct'    // default 'review'
-  maxTurns?: number                  // default 8
+  systemPrompt?: string // overrides the built-in prompt
+  applyMode?: 'review' | 'direct' // default 'review'
+  maxTurns?: number // default 8
 }
 ```
 
 ## Commands
 
-| Command | Description |
-| --- | --- |
+| Command                | Description                                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `aiAgentSend(message)` | Sends a user message and runs the loop. Single-flight: returns `false` while a run is in progress. In review mode, returns `false` with an error state if AiChanges is missing. |
-| `aiAgentAbort()` | Aborts the in-flight run. State returns to idle; the transcript keeps what completed. |
-| `aiAgentReset()` | Clears the transcript and resets state (aborts any in-flight run). |
+| `aiAgentAbort()`       | Aborts the in-flight run. State returns to idle; the transcript keeps what completed.                                                                                           |
+| `aiAgentReset()`       | Clears the transcript and resets state (aborts any in-flight run).                                                                                                              |
 
 ## Storage
 

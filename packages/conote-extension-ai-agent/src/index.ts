@@ -8,12 +8,7 @@ export {
   READ_DOCUMENT,
   REPLACE_TEXT,
 } from './tools.js'
-export {
-  anchorRange,
-  buildDocTextIndex,
-  docPlainText,
-  positionAtOffset,
-} from './locate.js'
+export { anchorRange, buildDocTextIndex, docPlainText, positionAtOffset } from './locate.js'
 export type { DocTextIndex } from './locate.js'
 export { createEditSession } from './session.js'
 export type { EditSession, StagedChange } from './session.js'

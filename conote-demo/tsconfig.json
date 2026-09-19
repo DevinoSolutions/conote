@@ -18,7 +18,9 @@
     "paths": {
       "@conote/ai-core": ["../packages/conote-ai-core/src/index.ts"],
       "@conote/extension-ai": ["../packages/conote-extension-ai/src/index.ts"],
-      "@conote/extension-ai-suggestion": ["../packages/conote-extension-ai-suggestion/src/index.ts"],
+      "@conote/extension-ai-suggestion": [
+        "../packages/conote-extension-ai-suggestion/src/index.ts"
+      ],
       "@conote/extension-ai-changes": ["../packages/conote-extension-ai-changes/src/index.ts"],
       "@conote/extension-ai-agent": ["../packages/conote-extension-ai-agent/src/index.ts"],
       "@tiptap/core": ["./node_modules/@tiptap/core/dist/index.d.ts"],

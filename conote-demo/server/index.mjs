@@ -69,7 +69,7 @@ function sendJson(res, status, body) {
 function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = []
-    req.on('data', (chunk) => chunks.push(chunk))
+    req.on('data', chunk => chunks.push(chunk))
     req.on('end', () => resolve(Buffer.concat(chunks)))
     req.on('error', reject)
   })
@@ -158,7 +158,7 @@ const server = createServer((req, res) => {
   }
 
   if (req.method === 'POST' && url.startsWith('/api/chat/completions')) {
-    handleChatCompletions(req, res).catch((error) => {
+    handleChatCompletions(req, res).catch(error => {
       sendJson(res, 500, {
         error: `Proxy error: ${error instanceof Error ? error.message : String(error)}`,
       })

@@ -93,7 +93,13 @@ function buildSegments(originalText: string, edits: StagedEdit[]): Segment[] {
       v += len
     }
     const insLen = edit.newText.length
-    segments.push({ vStart: v, vEnd: v + insLen, oStart: edit.oStart, oEnd: edit.oEnd, kind: 'ins' })
+    segments.push({
+      vStart: v,
+      vEnd: v + insLen,
+      oStart: edit.oStart,
+      oEnd: edit.oEnd,
+      kind: 'ins',
+    })
     v += insLen
     cursor = Math.max(cursor, edit.oEnd)
   }
@@ -180,7 +186,8 @@ class ReviewSession implements EditSession {
 
     // Expand the match to whole inserted segments so the merged edit maps onto a
     // contiguous original range.
-    const oStart = startSeg.kind === 'orig' ? startSeg.oStart + (match.start - startSeg.vStart) : startSeg.oStart
+    const oStart =
+      startSeg.kind === 'orig' ? startSeg.oStart + (match.start - startSeg.vStart) : startSeg.oStart
     const vExpStart = startSeg.kind === 'orig' ? match.start : startSeg.vStart
     const oEnd = endSeg.kind === 'orig' ? endSeg.oStart + (match.end - endSeg.vStart) : endSeg.oEnd
     const vExpEnd = endSeg.kind === 'orig' ? match.end : endSeg.vEnd

@@ -46,13 +46,13 @@ const editor = new Editor({
 
 ## Options
 
-| Option | Type | Description |
-| --- | --- | --- |
-| `provider` | `CompletionProvider` | **Required.** Performs completions. |
-| `defaultModel` | `string` | Model used when a command does not override it. |
-| `temperature` | `number` | Sampling temperature used when a command does not override it. |
-| `systemPrompt` | `string` | Overrides the base system prompt shared by every command. |
-| `context` | `() => string` | Supplies extra document context, added to the prompt as a system message. |
+| Option         | Type                 | Description                                                               |
+| -------------- | -------------------- | ------------------------------------------------------------------------- |
+| `provider`     | `CompletionProvider` | **Required.** Performs completions.                                       |
+| `defaultModel` | `string`             | Model used when a command does not override it.                           |
+| `temperature`  | `number`             | Sampling temperature used when a command does not override it.            |
+| `systemPrompt` | `string`             | Overrides the base system prompt shared by every command.                 |
+| `context`      | `() => string`       | Supplies extra document context, added to the prompt as a system message. |
 
 ## Commands
 
@@ -61,15 +61,15 @@ All commands live in the `ai` namespace. Each accepts an optional
 overrides the command's default insertion behavior. Commands return `true` immediately and stream
 in the background.
 
-| Command | Behavior |
-| --- | --- |
-| `aiComplete(options?)` | Continue writing from the cursor using up to ~2000 characters before it. Inserts at the cursor. |
-| `aiRewrite(options?)` | Rewrite the current selection. Requires a non-empty selection (returns `false` otherwise); replaces it. |
-| `aiSummarize(options?)` | Summarize the selection, or the whole document when the selection is empty. Replaces the selection / inserts at the cursor respectively. |
-| `aiAdjustTone(tone, options?)` | Change the tone of the selection. Requires a non-empty selection; replaces it. |
-| `aiTranslate(language, options?)` | Translate the selection into `language`. Requires a non-empty selection; replaces it. |
-| `aiCustomPrompt(prompt, options?)` | Apply an arbitrary instruction to the selection (replace) or at the cursor when the selection is empty (insert). |
-| `aiAbort()` | Abort the in-flight request. Returns `true` if something was aborted. |
+| Command                            | Behavior                                                                                                                                 |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `aiComplete(options?)`             | Continue writing from the cursor using up to ~2000 characters before it. Inserts at the cursor.                                          |
+| `aiRewrite(options?)`              | Rewrite the current selection. Requires a non-empty selection (returns `false` otherwise); replaces it.                                  |
+| `aiSummarize(options?)`            | Summarize the selection, or the whole document when the selection is empty. Replaces the selection / inserts at the cursor respectively. |
+| `aiAdjustTone(tone, options?)`     | Change the tone of the selection. Requires a non-empty selection; replaces it.                                                           |
+| `aiTranslate(language, options?)`  | Translate the selection into `language`. Requires a non-empty selection; replaces it.                                                    |
+| `aiCustomPrompt(prompt, options?)` | Apply an arbitrary instruction to the selection (replace) or at the cursor when the selection is empty (insert).                         |
+| `aiAbort()`                        | Abort the in-flight request. Returns `true` if something was aborted.                                                                    |
 
 ```ts
 editor.commands.aiComplete()

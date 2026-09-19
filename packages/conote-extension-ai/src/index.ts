@@ -11,12 +11,6 @@ export {
   toneInstruction,
   translateInstruction,
 } from './prompts.js'
-export type {
-  AiCommandOptions,
-  AiInsertMode,
-  AiOptions,
-  AiState,
-  AiStorage,
-} from './types.js'
+export type { AiCommandOptions, AiInsertMode, AiOptions, AiState, AiStorage } from './types.js'
 
 export default Ai

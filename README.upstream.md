@@ -1,4 +1,4 @@
-*This is the original Tiptap README, preserved from the upstream project.*
+_This is the original Tiptap README, preserved from the upstream project._
 
 ![Tiptap Editor](.github/assets/cover.png)
 
