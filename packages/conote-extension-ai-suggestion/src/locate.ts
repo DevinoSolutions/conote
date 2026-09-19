@@ -55,7 +55,11 @@ function occurrences(haystack: string, needle: string): number[] {
   return found
 }
 
-function toRange(index: DocTextIndex, start: number, length: number): { from: number; to: number } | null {
+function toRange(
+  index: DocTextIndex,
+  start: number,
+  length: number,
+): { from: number; to: number } | null {
   for (let k = 0; k < length; k++) {
     const pos = index.posAt[start + k]
     if (pos == null || pos === -1) {

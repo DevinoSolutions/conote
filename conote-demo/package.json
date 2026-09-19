@@ -1,10 +1,10 @@
 {
   "name": "conote-demo",
-  "private": true,
   "version": "0.1.0",
-  "type": "module",
+  "private": true,
   "description": "Self-contained demo for CoNote AI Generation (proxy + Vite playground). Not published, not a workspace member.",
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

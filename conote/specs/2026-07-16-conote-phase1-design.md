@@ -9,6 +9,7 @@
 CoNote is an open-source fork of [Tiptap](https://github.com/ueberdosis/tiptap) maintained by Devino. It tracks upstream Tiptap (the MIT-licensed editor) and adds an independent, self-hostable implementation of AI editing features comparable to Tiptap's proprietary cloud AI products.
 
 **Legal ground rules (non-negotiable):**
+
 - Tiptap's editor core is MIT — we fork it, keep the LICENSE and all copyright notices intact.
 - Tiptap's AI features (AI Generation, AI Suggestion, AI Changes, AI Agent) are proprietary cloud products. **Zero code from those products is used or referenced.** We reimplement the capabilities from scratch against publicly documented behavior only.
 - "Tiptap" is used for attribution/crediting only. No Tiptap logos or branding in CoNote marketing. README states clearly: not affiliated with or endorsed by Tiptap GmbH.
@@ -16,7 +17,7 @@ CoNote is an open-source fork of [Tiptap](https://github.com/ueberdosis/tiptap) 
 
 ## Phase 1 scope
 
-1. **Fork setup** — import full `ueberdosis/tiptap` git history into `DevinoSolutions/CoNote` `main`; keep `upstream` remote for future `git merge upstream/main`. All CoNote code lives in *new* packages so upstream merges stay near-conflict-free. Upstream packages are never modified.
+1. **Fork setup** — import full `ueberdosis/tiptap` git history into `DevinoSolutions/CoNote` `main`; keep `upstream` remote for future `git merge upstream/main`. All CoNote code lives in _new_ packages so upstream merges stay near-conflict-free. Upstream packages are never modified.
 2. **README & licensing** — rewrite root README per the ground rules above; preserve upstream README as `README.upstream.md`; our packages are MIT.
 3. **`@conote/ai-core`** — provider-agnostic AI layer.
 4. **`@conote/extension-ai`** — AI Generation extension (Tiptap extension).
@@ -50,6 +51,7 @@ Follow upstream's build tooling (workspace manager, bundler, TS config) exactly 
 ### `@conote/extension-ai` (AI Generation)
 
 Tiptap extension exposing editor commands:
+
 - `aiComplete` — continue writing from cursor/selection context
 - `aiRewrite` — rewrite selection
 - `aiSummarize` — summarize selection
@@ -58,10 +60,11 @@ Tiptap extension exposing editor commands:
 - `aiCustomPrompt(prompt)` — arbitrary instruction over selection/document
 
 Behavior:
+
 - Streams tokens into the document via ProseMirror transactions; two insertion modes: insert-at-cursor and replace-selection.
 - Exposes state (idle / pending / streaming / error) via extension storage for UI binding.
 - Abort support (`aiAbort` command) wired to the provider's abort signal.
-- Command surface is *similar in spirit* to Tiptap's documented AI API so migration is intuitive, but independently designed and implemented.
+- Command surface is _similar in spirit_ to Tiptap's documented AI API so migration is intuitive, but independently designed and implemented.
 
 ### Demo proxy + demo app (`conote-demo/`)
 

@@ -40,7 +40,9 @@ function buildDecorations(
     const selected = change.id === selectedId
 
     if (change.oldText !== '' && change.range.to > change.range.from) {
-      const cls = selected ? `${CHANGE_DEL_CLASS} ${CHANGE_DEL_CLASS}${CHANGE_SELECTED_SUFFIX}` : CHANGE_DEL_CLASS
+      const cls = selected
+        ? `${CHANGE_DEL_CLASS} ${CHANGE_DEL_CLASS}${CHANGE_SELECTED_SUFFIX}`
+        : CHANGE_DEL_CLASS
       decorations.push(
         Decoration.inline(
           change.range.from,
@@ -52,7 +54,9 @@ function buildDecorations(
     }
 
     if (change.newText !== '') {
-      const cls = selected ? `${CHANGE_INS_CLASS} ${CHANGE_INS_CLASS}${CHANGE_SELECTED_SUFFIX}` : CHANGE_INS_CLASS
+      const cls = selected
+        ? `${CHANGE_INS_CLASS} ${CHANGE_INS_CLASS}${CHANGE_SELECTED_SUFFIX}`
+        : CHANGE_INS_CLASS
       const changeId = change.id
       const newText = change.newText
       decorations.push(
@@ -145,7 +149,12 @@ export function createAiChangesPlugin(config: {
           selectedId = null
         }
 
-        if (!meta && !tr.docChanged && changes === value.changes && selectedId === value.selectedId) {
+        if (
+          !meta &&
+          !tr.docChanged &&
+          changes === value.changes &&
+          selectedId === value.selectedId
+        ) {
           return value
         }
 

@@ -10,7 +10,7 @@ name: CoNote upstream sync
 on:
   # Weekly cadence: Mondays at 06:00 UTC. Cron on GitHub Actions is always UTC.
   schedule:
-    - cron: "0 6 * * 1"
+    - cron: '0 6 * * 1'
   # Allow a maintainer to trigger an out-of-cycle sync from the Actions tab.
   workflow_dispatch:
 
@@ -36,7 +36,7 @@ jobs:
       # and `git rev-list main..upstream/main` have every commit to reason about.
       # persist-credentials (default true) leaves a token that can push the branch.
       - name: Checkout main (full history)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: main
@@ -71,7 +71,13 @@ jobs:
       - name: Create sync branch and merge upstream
         if: steps.check.outputs.count != '0'
         env:
-          # gh reads GH_TOKEN for `pr`/`issue` operations; the default token suffices.
+          # gh reads GH_TOKEN for `gh api` calls; the default token suffices.
+          #
+          # Everything below goes through `gh api` (REST) rather than `gh pr` / `gh issue`.
+          # Those porcelain commands route creates through GitHub's GraphQL API, which
+          # rejects GITHUB_TOKEN with `Resource not accessible by integration (createIssue)`
+          # even when the workflow holds `issues: write`. The REST endpoints honour the
+          # very same token, so the sync now uses them directly.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # NOTE: no `set -e` here — the merge is expected to fail on conflicts and
@@ -85,9 +91,9 @@ jobs:
           # Duplicate guard: if a sync PR from an earlier run is still open, a human
           # has not merged it yet. Stacking another PR on top would just create noise,
           # so skip this run (success) and let the open one be dealt with first.
-          EXISTING_PR=$(gh pr list --state open --base main \
-            --json number,headRefName \
-            --jq 'map(select(.headRefName | startswith("upstream-sync/"))) | .[0].number // empty')
+          EXISTING_PR=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/pulls?state=open&base=main&per_page=100" \
+            --jq 'map(select(.head.ref | startswith("upstream-sync/"))) | .[0].number // empty')
           if [ -n "$EXISTING_PR" ]; then
             echo "::notice::Upstream-sync PR #${EXISTING_PR} is still open — skipping to avoid a duplicate."
             exit 0
@@ -103,11 +109,8 @@ jobs:
             git push origin "$BRANCH"
 
             COMMITS=$(git log --oneline main..upstream/main | awk 'NR<=50')
-            gh pr create \
-              --base main \
-              --head "$BRANCH" \
-              --title "chore: merge upstream tiptap (${DATE})" \
-              --body "$(cat <<EOF
+            PR_TITLE="chore: merge upstream tiptap (${DATE})"
+            PR_BODY="$(cat <<EOF
           Automated weekly merge of \`upstream/main\` (ueberdosis/tiptap) into \`main\`.
 
           This merge was clean (no conflicts). All CoNote code lives in \`packages/conote-*\`
@@ -126,6 +129,14 @@ jobs:
             (or push an empty commit) to kick off CI before merging.
           EOF
           )"
+            if ! gh api "repos/${GITHUB_REPOSITORY}/pulls" \
+              -f head="$BRANCH" \
+              -f base=main \
+              -f title="$PR_TITLE" \
+              -f body="$PR_BODY" >/dev/null; then
+              echo "::error::Failed to open the upstream-sync pull request for ${BRANCH}."
+              exit 1
+            fi
             echo "::notice::Opened upstream-sync PR for ${BRANCH}."
             exit 0
           fi
@@ -167,13 +178,30 @@ jobs:
 
           # Reuse an already-open issue with the same title (e.g. a re-run on the same
           # day) instead of opening a second one; otherwise create a fresh issue.
-          EXISTING_ISSUE=$(gh issue list --state open --limit 100 \
-            --json number,title \
-            --jq 'map(select(.title == "'"$TITLE"'")) | .[0].number // empty')
+          # REST /issues also returns pull requests, so drop anything carrying a
+          # `pull_request` key. The title is matched through the environment because
+          # `gh api --jq` has no `--arg`.
+          export TITLE
+          EXISTING_ISSUE=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/issues?state=open&per_page=100" \
+            --jq 'map(select(.pull_request == null and .title == env.TITLE)) | .[0].number // empty')
           if [ -n "$EXISTING_ISSUE" ]; then
-            gh issue comment "$EXISTING_ISSUE" --body "$ISSUE_BODY"
+            if ! gh api "repos/${GITHUB_REPOSITORY}/issues/${EXISTING_ISSUE}/comments" \
+              -f body="$ISSUE_BODY" >/dev/null; then
+              echo "::error::Failed to comment on upstream-sync conflict issue #${EXISTING_ISSUE}."
+              exit 1
+            fi
             echo "::notice::Updated existing conflict issue #${EXISTING_ISSUE}."
           else
-            gh issue create --title "$TITLE" --body "$ISSUE_BODY"
+            if ! gh api "repos/${GITHUB_REPOSITORY}/issues" \
+              -f title="$TITLE" \
+              -f body="$ISSUE_BODY" >/dev/null; then
+              echo "::error::Failed to open an upstream-sync conflict issue."
+              exit 1
+            fi
             echo "::notice::Opened a new upstream-sync conflict issue."
           fi
+
+          # A conflict that a human must resolve is not a workflow failure. Be explicit
+          # so a non-zero status from anything above cannot leak out as the step result.
+          exit 0

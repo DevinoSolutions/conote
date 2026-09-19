@@ -90,8 +90,6 @@ export const AiChanges = Extension.create<AiChangesOptions>({
   },
 
   addCommands() {
-    const extension = this
-
     return {
       aiChangesPropose:
         (options: AiChangesProposeOptions) =>
@@ -100,7 +98,7 @@ export const AiChanges = Extension.create<AiChangesOptions>({
           if (storage.state === 'loading') {
             return false
           }
-          const opts = extension.options
+          const opts = this.options
           const selection = state.selection.empty
             ? null
             : { from: state.selection.from, to: state.selection.to }

@@ -80,6 +80,9 @@ export class FakeChatProvider implements ChatCompletionProvider {
     throw new Error('FakeChatProvider.complete is not used')
   }
 
+  // Deliberately an async generator that only throws: the provider contract makes `stream`
+  // lazy, so the "not used" failure must surface on first iteration rather than at call time.
+  // eslint-disable-next-line require-yield -- the stub throws instead of yielding, by design
   async *stream(): AsyncIterable<string> {
     throw new Error('FakeChatProvider.stream is not used')
   }
@@ -210,6 +213,9 @@ export class FakeStreamingChatProvider implements StreamingChatCompletionProvide
     throw new Error('FakeStreamingChatProvider.complete is not used')
   }
 
+  // Deliberately an async generator that only throws: the provider contract makes `stream`
+  // lazy, so the "not used" failure must surface on first iteration rather than at call time.
+  // eslint-disable-next-line require-yield -- the stub throws instead of yielding, by design
   async *stream(): AsyncIterable<string> {
     throw new Error('FakeStreamingChatProvider.stream is not used')
   }

@@ -86,8 +86,6 @@ export const Ai = Extension.create<AiOptions>({
   },
 
   addCommands() {
-    const extension = this
-
     const complete: Builder = ({ before }) => ({
       instruction: INSTRUCTIONS.complete,
       input: before,
@@ -108,57 +106,45 @@ export const Ai = Extension.create<AiOptions>({
     })
 
     return {
-      aiComplete:
-        (options?: AiCommandOptions) =>
-        (props: CommandProps) =>
-          run(extension, props, options, complete),
+      aiComplete: (options?: AiCommandOptions) => (props: CommandProps) =>
+        run(this, props, options, complete),
 
-      aiRewrite:
-        (options?: AiCommandOptions) =>
-        (props: CommandProps) =>
-          run(extension, props, options, rewrite),
+      aiRewrite: (options?: AiCommandOptions) => (props: CommandProps) =>
+        run(this, props, options, rewrite),
 
-      aiSummarize:
-        (options?: AiCommandOptions) =>
-        (props: CommandProps) =>
-          run(extension, props, options, summarize),
+      aiSummarize: (options?: AiCommandOptions) => (props: CommandProps) =>
+        run(this, props, options, summarize),
 
-      aiAdjustTone:
-        (tone: string, options?: AiCommandOptions) =>
-        (props: CommandProps) =>
-          run(extension, props, options, ({ hasSelection, selectionText }) => {
-            if (!hasSelection) {
-              return null
-            }
-            return {
-              instruction: toneInstruction(tone),
-              input: selectionText,
-              mode: 'replaceSelection',
-            }
-          }),
+      aiAdjustTone: (tone: string, options?: AiCommandOptions) => (props: CommandProps) =>
+        run(this, props, options, ({ hasSelection, selectionText }) => {
+          if (!hasSelection) {
+            return null
+          }
+          return {
+            instruction: toneInstruction(tone),
+            input: selectionText,
+            mode: 'replaceSelection',
+          }
+        }),
 
-      aiTranslate:
-        (language: string, options?: AiCommandOptions) =>
-        (props: CommandProps) =>
-          run(extension, props, options, ({ hasSelection, selectionText }) => {
-            if (!hasSelection) {
-              return null
-            }
-            return {
-              instruction: translateInstruction(language),
-              input: selectionText,
-              mode: 'replaceSelection',
-            }
-          }),
+      aiTranslate: (language: string, options?: AiCommandOptions) => (props: CommandProps) =>
+        run(this, props, options, ({ hasSelection, selectionText }) => {
+          if (!hasSelection) {
+            return null
+          }
+          return {
+            instruction: translateInstruction(language),
+            input: selectionText,
+            mode: 'replaceSelection',
+          }
+        }),
 
-      aiCustomPrompt:
-        (prompt: string, options?: AiCommandOptions) =>
-        (props: CommandProps) =>
-          run(extension, props, options, ({ hasSelection, selectionText, before }) => ({
-            instruction: customInstruction(prompt),
-            input: hasSelection ? selectionText : before,
-            mode: hasSelection ? 'replaceSelection' : 'cursor',
-          })),
+      aiCustomPrompt: (prompt: string, options?: AiCommandOptions) => (props: CommandProps) =>
+        run(this, props, options, ({ hasSelection, selectionText, before }) => ({
+          instruction: customInstruction(prompt),
+          input: hasSelection ? selectionText : before,
+          mode: hasSelection ? 'replaceSelection' : 'cursor',
+        })),
 
       aiAbort:
         () =>

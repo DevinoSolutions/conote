@@ -3,13 +3,13 @@
   "version": "0.1.1",
   "description": "Reviewable AI tracked changes for Tiptap: propose an LLM rewrite and accept or reject each word-level hunk without touching the document until you approve it. Part of CoNote, an open-source fork of Tiptap.",
   "keywords": [
+    "ai",
     "conote",
+    "diff",
+    "llm",
     "tiptap",
     "tiptap extension",
-    "ai",
-    "llm",
-    "tracked changes",
-    "diff"
+    "tracked changes"
   ],
   "homepage": "https://github.com/DevinoSolutions/CoNote",
   "bugs": {
@@ -40,8 +40,8 @@
     }
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch --sourcemap"
+    "build": "vp pack",
+    "dev": "vp pack --watch"
   },
   "dependencies": {
     "@conote/ai-core": "workspace:^"

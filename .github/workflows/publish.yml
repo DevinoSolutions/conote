@@ -2,16 +2,18 @@ name: Publish
 
 env:
   NODE_VERSION: 24
-  PNPM_VERSION: 11.2.2
+  VP_GIT_HOOKS: 0
 
+# this branch only releases from main
+# other versions are released from their respective release/* branches
 on:
   push:
     branches:
       - main
-      - v2
 
+# Least privilege by default. Jobs that need OIDC (DevinoSolutions/artifact, npm
+# trusted publishing) opt into `id-token: write` themselves.
 permissions:
-  id-token: write
   contents: read
 
 concurrency:
@@ -44,26 +46,33 @@ jobs:
     timeout-minutes: 30
     needs: resolve-config
     if: needs.resolve-config.outputs.configured == 'true'
+    # `id-token: write` mints the OIDC token DevinoSolutions/artifact exchanges for
+    # self-hosted MinIO credentials on the upload step below.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-env
         with:
           node-version: ${{ env.NODE_VERSION }}
-          pnpm-version: ${{ env.PNPM_VERSION }}
           cache: 'true'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --strict-peer-dependencies
+        run: vp install --frozen-lockfile -- --strict-peer-dependencies
 
       - name: Run build
-        run: pnpm run build && pnpm run build:demos
+        run: vp run build && vp run build:demos
+
+      - name: Check package exports
+        run: vp run check:package-exports
 
       - name: Archive package dist artifacts
-        run: tar -cf package-dist-artifacts.tar packages/*/dist packages-deprecated/*/dist
+        run: tar -cf package-dist-artifacts.tar packages/*/dist
 
       - name: Upload package dist artifacts
-        uses: DevinoSolutions/artifact/upload@v1
+        uses: DevinoSolutions/artifact/upload@739b3abd2f5f7bd4db8106bda6513ae94020c9e6 # v1.1.0 (current target of the moving v1 tag)
         with:
           name: package-dist-artifacts
           if-no-files-found: error
@@ -88,17 +97,16 @@ jobs:
       - uses: ./.github/actions/setup-env
         with:
           node-version: ${{ env.NODE_VERSION }}
-          pnpm-version: ${{ env.PNPM_VERSION }}
           cache: 'true'
 
       - name: Update npm for trusted publishing
         run: npm install -g npm@11.6.2
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --strict-peer-dependencies
+        run: vp install --frozen-lockfile -- --strict-peer-dependencies
 
       - name: Download package dist artifacts
-        uses: DevinoSolutions/artifact/download@v1
+        uses: DevinoSolutions/artifact/download@739b3abd2f5f7bd4db8106bda6513ae94020c9e6 # v1.1.0 (current target of the moving v1 tag)
         with:
           name: package-dist-artifacts
           path: .
@@ -107,15 +115,15 @@ jobs:
         run: tar -xf package-dist-artifacts.tar
 
       - name: Verify package dist artifacts
-        run: bash ./scripts/check-package-dists.sh
+        run: bash ./scripts/check-package-dists.sh && vp run check:package-exports
 
       - name: Run changesets release flow
         id: changesets
         uses: changesets/action@v1
         with:
           createGithubReleases: false
-          version: pnpm run version
-          publish: pnpm changeset publish --tag ${{ needs.resolve-config.outputs.dist_tag }}
+          version: vp run version
+          publish: vp exec changeset publish
           title: ${{ needs.resolve-config.outputs.title }}
           commit: ${{ needs.resolve-config.outputs.commit }}
         env:
@@ -132,7 +140,7 @@ jobs:
     permissions: {}
     steps:
       - name: Send Slack notification
-        uses: slackapi/slack-github-action@v3.0.5
+        uses: slackapi/slack-github-action@v4.0.0
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: webhook-trigger
@@ -152,7 +160,7 @@ jobs:
     permissions: {}
     steps:
       - name: Send Slack failure notification
-        uses: slackapi/slack-github-action@v3.0.5
+        uses: slackapi/slack-github-action@v4.0.0
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: webhook-trigger

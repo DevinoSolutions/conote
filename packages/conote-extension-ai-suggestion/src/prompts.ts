@@ -25,7 +25,9 @@ export interface RawSuggestion {
 
 /** Assembles the message list sent to the provider for a proofreading pass. */
 export function buildSuggestionMessages(docText: string, rules: AiSuggestionRule[]): ChatMessage[] {
-  const ruleLines = rules.map(rule => `- id "${rule.id}" (${rule.title}): ${rule.prompt}`).join('\n')
+  const ruleLines = rules
+    .map(rule => `- id "${rule.id}" (${rule.title}): ${rule.prompt}`)
+    .join('\n')
   const system = `${SUGGESTION_SYSTEM_PROMPT}\n\nRules:\n${ruleLines}`
   const user = `Proofread the following document text and return suggestions as strict JSON.\n\nDocument:\n"""\n${docText}\n"""`
   return [
@@ -63,7 +65,10 @@ export function parseSuggestionResponse(raw: string): RawSuggestion[] {
     if (!item || typeof item !== 'object') {
       continue
     }
-    const { ruleId, deleteText, replacementText, beforeText, note } = item as Record<string, unknown>
+    const { ruleId, deleteText, replacementText, beforeText, note } = item as Record<
+      string,
+      unknown
+    >
     if (
       typeof ruleId !== 'string' ||
       typeof deleteText !== 'string' ||

@@ -33,8 +33,18 @@ const editor = new Editor({
       provider: new OpenRouterProvider({ baseUrl: '/api/ai' }),
       defaultModel: 'anthropic/claude-haiku-4.5',
       rules: [
-        { id: 'spelling', title: 'Spelling & grammar', prompt: 'Fix spelling and grammar mistakes.', color: '#e11d48' },
-        { id: 'concise', title: 'Conciseness', prompt: 'Make wordy sentences more concise.', color: '#2563eb' },
+        {
+          id: 'spelling',
+          title: 'Spelling & grammar',
+          prompt: 'Fix spelling and grammar mistakes.',
+          color: '#e11d48',
+        },
+        {
+          id: 'concise',
+          title: 'Conciseness',
+          prompt: 'Make wordy sentences more concise.',
+          color: '#2563eb',
+        },
       ],
     }),
   ],
@@ -45,12 +55,12 @@ editor.commands.aiSuggestionLoad()
 
 ## Options
 
-| Option | Type | Description |
-| --- | --- | --- |
-| `provider` | `CompletionProvider` | **Required.** Performs completions. |
-| `rules` | `AiSuggestionRule[]` | **Required.** Rules the model applies. A suggestion referencing an unknown rule id is dropped. |
-| `defaultModel` | `string` | Model used when a load does not override it. |
-| `temperature` | `number` | Sampling temperature used when a load does not override it. |
+| Option         | Type                 | Description                                                                                    |
+| -------------- | -------------------- | ---------------------------------------------------------------------------------------------- |
+| `provider`     | `CompletionProvider` | **Required.** Performs completions.                                                            |
+| `rules`        | `AiSuggestionRule[]` | **Required.** Rules the model applies. A suggestion referencing an unknown rule id is dropped. |
+| `defaultModel` | `string`             | Model used when a load does not override it.                                                   |
+| `temperature`  | `number`             | Sampling temperature used when a load does not override it.                                    |
 
 Each `AiSuggestionRule` is `{ id, title, prompt, color? }`.
 
@@ -58,14 +68,14 @@ Each `AiSuggestionRule` is `{ id, title, prompt, color? }`.
 
 All commands live in the `aiSuggestion` namespace.
 
-| Command | Behavior |
-| --- | --- |
-| `aiSuggestionLoad(options?)` | Fetch suggestions from the provider. Single-flight: returns `false` while a load is in progress. `options` is `{ model?, temperature? }`. |
-| `aiSuggestionApply(id)` | Replace the suggestion's range with its `replacementText`, remove it, and remap the rest. |
-| `aiSuggestionReject(id)` | Remove one suggestion without changing the document. |
-| `aiSuggestionApplyAll()` | Apply every suggestion in one transaction. |
-| `aiSuggestionClear()` | Remove every suggestion without changing the document. |
-| `aiSuggestionSelect(id \| null)` | Mark a suggestion selected, or clear the selection. |
+| Command                          | Behavior                                                                                                                                  |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `aiSuggestionLoad(options?)`     | Fetch suggestions from the provider. Single-flight: returns `false` while a load is in progress. `options` is `{ model?, temperature? }`. |
+| `aiSuggestionApply(id)`          | Replace the suggestion's range with its `replacementText`, remove it, and remap the rest.                                                 |
+| `aiSuggestionReject(id)`         | Remove one suggestion without changing the document.                                                                                      |
+| `aiSuggestionApplyAll()`         | Apply every suggestion in one transaction.                                                                                                |
+| `aiSuggestionClear()`            | Remove every suggestion without changing the document.                                                                                    |
+| `aiSuggestionSelect(id \| null)` | Mark a suggestion selected, or clear the selection.                                                                                       |
 
 ## State binding
 
@@ -75,9 +85,9 @@ The extension exposes its state through `editor.storage.aiSuggestion`:
 interface AiSuggestionStorage {
   state: 'idle' | 'loading' | 'error'
   error: Error | null
-  suggestions: AiSuggestion[]   // mirror of plugin state, in document order
+  suggestions: AiSuggestion[] // mirror of plugin state, in document order
   selectedId: string | null
-  droppedCount: number          // suggestions dropped in the last load (unmatched / unknown rule)
+  droppedCount: number // suggestions dropped in the last load (unmatched / unknown rule)
 }
 ```
 
@@ -87,12 +97,12 @@ The authoritative source is the ProseMirror plugin; storage is refreshed after e
 
 Decorations are plain inline decorations you style yourself. No CSS is bundled.
 
-| Hook | Applied to |
-| --- | --- |
-| `.conote-ai-suggestion` | Every suggestion. |
-| `.conote-ai-suggestion--selected` | The selected suggestion. |
-| `[data-rule-id="<id>"]` | Suggestions from a specific rule. |
-| `--conote-ai-suggestion-color` | CSS variable set from the rule's `color`, when provided. |
+| Hook                              | Applied to                                               |
+| --------------------------------- | -------------------------------------------------------- |
+| `.conote-ai-suggestion`           | Every suggestion.                                        |
+| `.conote-ai-suggestion--selected` | The selected suggestion.                                 |
+| `[data-rule-id="<id>"]`           | Suggestions from a specific rule.                        |
+| `--conote-ai-suggestion-color`    | CSS variable set from the rule's `color`, when provided. |
 
 ```css
 .conote-ai-suggestion {

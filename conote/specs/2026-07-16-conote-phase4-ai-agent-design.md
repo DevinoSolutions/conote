@@ -15,13 +15,40 @@ OpenRouter is OpenAI-chat-compatible and supports the `tools` parameter; our dem
 New exports (nothing existing changes):
 
 ```ts
-export interface ToolDefinition { name: string; description: string; parameters: Record<string, unknown> } // JSON Schema
-export interface ToolCall { id: string; name: string; arguments: Record<string, unknown> } // arguments JSON-parsed; malformed → {} + flag
-export interface ToolResultMessage { role: 'tool'; toolCallId: string; content: string }
-export interface AssistantToolCallMessage { role: 'assistant'; content: string | null; toolCalls: ToolCall[] }
+export interface ToolDefinition {
+  name: string
+  description: string
+  parameters: Record<string, unknown>
+} // JSON Schema
+export interface ToolCall {
+  id: string
+  name: string
+  arguments: Record<string, unknown>
+} // arguments JSON-parsed; malformed → {} + flag
+export interface ToolResultMessage {
+  role: 'tool'
+  toolCallId: string
+  content: string
+}
+export interface AssistantToolCallMessage {
+  role: 'assistant'
+  content: string | null
+  toolCalls: ToolCall[]
+}
 export type AgentMessage = ChatMessage | ToolResultMessage | AssistantToolCallMessage
-export interface ChatRequest { messages: AgentMessage[]; tools?: ToolDefinition[]; model?; temperature?; maxTokens?; signal? }
-export interface AssistantTurn { content: string | null; toolCalls: ToolCall[]; finishReason: string | null }
+export interface ChatRequest {
+  messages: AgentMessage[]
+  tools?: ToolDefinition[]
+  model?
+  temperature?
+  maxTokens?
+  signal?
+}
+export interface AssistantTurn {
+  content: string | null
+  toolCalls: ToolCall[]
+  finishReason: string | null
+}
 export interface ChatCompletionProvider extends CompletionProvider {
   chatComplete(request: ChatRequest): Promise<AssistantTurn>
 }
@@ -42,7 +69,7 @@ Text-anchored (never character offsets — same robustness rationale as Phases 2
 
 ### Apply modes
 
-- `applyMode: 'review'` (default): edit tools accumulate hunks; when the agent loop finishes, they are staged in one `aiChangesSet` call so the user accepts/rejects each as tracked changes. Requires the AiChanges extension on the editor — `aiAgentSend` returns false with an error state if missing. Tool results still report success so the model reasons as if applied; `read_document` reflects the *virtual* text (base text + staged edits applied) for consistency within the loop.
+- `applyMode: 'review'` (default): edit tools accumulate hunks; when the agent loop finishes, they are staged in one `aiChangesSet` call so the user accepts/rejects each as tracked changes. Requires the AiChanges extension on the editor — `aiAgentSend` returns false with an error state if missing. Tool results still report success so the model reasons as if applied; `read_document` reflects the _virtual_ text (base text + staged edits applied) for consistency within the loop.
 - `applyMode: 'direct'`: edits applied immediately via transactions.
 
 ### The loop

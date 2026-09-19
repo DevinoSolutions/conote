@@ -101,8 +101,6 @@ export const AiSuggestion = Extension.create<AiSuggestionOptions>({
   },
 
   addCommands() {
-    const extension = this
-
     return {
       aiSuggestionLoad:
         (options?: AiSuggestionLoadOptions) =>
@@ -111,7 +109,7 @@ export const AiSuggestion = Extension.create<AiSuggestionOptions>({
           if (storage.state === 'loading') {
             return false
           }
-          const opts = extension.options
+          const opts = this.options
           const messages = buildSuggestionMessages(docPlainText(state.doc), opts.rules)
           const request: CompletionRequest = {
             messages,

@@ -2,7 +2,7 @@ import { Editor } from '@tiptap/core'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { AiChanges, aiChangesPluginKey } from '../../conote-extension-ai-changes/src/index.js'
 import { AiAgent } from '../src/index.js'
@@ -64,7 +64,9 @@ describe('AiAgent extension', () => {
     expect(followUp[2]).toEqual({
       role: 'assistant',
       content: null,
-      toolCalls: [{ id: 'call_replace_text', name: REPLACE_TEXT, arguments: { find: 'cat', replace: 'dog' } }],
+      toolCalls: [
+        { id: 'call_replace_text', name: REPLACE_TEXT, arguments: { find: 'cat', replace: 'dog' } },
+      ],
     })
     expect(followUp[3]).toEqual({
       role: 'tool',
@@ -72,7 +74,11 @@ describe('AiAgent extension', () => {
       content: 'Replaced "cat" with "dog".',
     })
     // Tools are advertised on every request.
-    expect(provider.calls[0].tools?.map(t => t.name)).toEqual([READ_DOCUMENT, REPLACE_TEXT, INSERT_TEXT])
+    expect(provider.calls[0].tools?.map(t => t.name)).toEqual([
+      READ_DOCUMENT,
+      REPLACE_TEXT,
+      INSERT_TEXT,
+    ])
   })
 
   it('replace_text stages a change with the correct range without touching the document', async () => {
@@ -192,7 +198,10 @@ describe('AiAgent extension', () => {
 
     // The read_document result (third request's last tool message) shows the edit applied.
     const thirdRequest = provider.calls[2].messages
-    const lastToolResult = thirdRequest[thirdRequest.length - 1] as { role: string; content: string }
+    const lastToolResult = thirdRequest[thirdRequest.length - 1] as {
+      role: string
+      content: string
+    }
     expect(lastToolResult.role).toBe('tool')
     expect(lastToolResult.content).toBe('the dog')
     // But the real document is still untouched (review mode).
@@ -244,9 +253,12 @@ describe('AiAgent extension', () => {
   })
 
   it('aborts mid-loop, returning to idle and keeping the completed transcript', async () => {
-    const provider = new FakeChatProvider([toolTurn(REPLACE_TEXT, { find: 'cat', replace: 'dog' })], {
-      gated: true,
-    })
+    const provider = new FakeChatProvider(
+      [toolTurn(REPLACE_TEXT, { find: 'cat', replace: 'dog' })],
+      {
+        gated: true,
+      },
+    )
     editor = makeReviewEditor(provider, '<p>the cat</p>')
 
     expect(editor.commands.aiAgentSend('fix')).toBe(true)
