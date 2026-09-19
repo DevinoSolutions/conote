@@ -1,4 +1,7 @@
 import { fileURLToPath } from 'node:url'
+// conote-demo is a standalone npm project outside the pnpm workspace: it depends on `vite`,
+// not the workspace's `vite-plus`, so the workspace-wide import preference does not apply.
+// eslint-disable-next-line vite-plus/prefer-vite-plus-imports -- see above
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 
 import { AiProviderError, OpenRouterProvider } from '../src/index.js'
 import type { ChatRequest, ChatStreamEvent, CompletionRequest } from '../src/index.js'

@@ -83,7 +83,6 @@ export const AiAgent = Extension.create<AiAgentOptions>({
   },
 
   addCommands() {
-    const extension = this
     let abortController: AbortController | null = null
 
     return {
@@ -94,7 +93,7 @@ export const AiAgent = Extension.create<AiAgentOptions>({
           if (storage.state === 'working') {
             return false
           }
-          const opts = extension.options
+          const opts = this.options
           const applyMode = opts.applyMode ?? 'review'
           if (applyMode !== 'direct' && !getAiChangesSet(editor)) {
             storage.state = 'error'

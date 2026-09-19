@@ -57,6 +57,9 @@ export class FakeChangeProvider implements CompletionProvider {
     return typeof this.response === 'function' ? this.response() : this.response
   }
 
+  // Deliberately an async generator that only throws: the provider contract makes `stream`
+  // lazy, so the "not used" failure must surface on first iteration rather than at call time.
+  // eslint-disable-next-line require-yield -- the stub throws instead of yielding, by design
   async *stream(): AsyncIterable<string> {
     throw new Error('FakeChangeProvider.stream is not used')
   }
