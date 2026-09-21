@@ -135,7 +135,7 @@ jobs:
 
       - name: Upload blob report
         if: always()
-        uses: DevinoSolutions/artifact/upload@739b3abd2f5f7bd4db8106bda6513ae94020c9e6 # v1.1.0 (current target of the moving v1 tag)
+        uses: DevinoSolutions/artifact/upload@44df16680dcb504375db03d284d75808db18e4ed # v1.1.0 (current target of the moving v1 tag)
         with:
           name: e2e-blob-report-${{ matrix.shard }}
           path: blob-report
@@ -174,7 +174,7 @@ jobs:
         run: vp exec playwright merge-reports --reporter html ./all-blob-reports
 
       - name: Upload merged HTML report
-        uses: DevinoSolutions/artifact/upload@739b3abd2f5f7bd4db8106bda6513ae94020c9e6 # v1.1.0 (current target of the moving v1 tag)
+        uses: DevinoSolutions/artifact/upload@44df16680dcb504375db03d284d75808db18e4ed # v1.1.0 (current target of the moving v1 tag)
         with:
           name: playwright-html-report
           path: playwright-report
