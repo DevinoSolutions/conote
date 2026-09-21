@@ -163,7 +163,7 @@ jobs:
       - uses: ./.github/actions/restore-dependencies
 
       - name: Download blob reports
-        uses: DevinoSolutions/artifact/download@739b3abd2f5f7bd4db8106bda6513ae94020c9e6 # v1.1.0 (current target of the moving v1 tag)
+        uses: DevinoSolutions/artifact/download@44df16680dcb504375db03d284d75808db18e4ed # v1.1.0 (current target of the moving v1 tag)
         with:
           path: all-blob-reports
           pattern: e2e-blob-report-*
