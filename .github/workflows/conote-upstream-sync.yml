@@ -29,7 +29,7 @@ permissions:
 jobs:
   sync:
     name: Merge upstream tiptap
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-devino
     timeout-minutes: 15
     steps:
       # fetch-depth: 0 — a full history is required so `git merge upstream/main`
