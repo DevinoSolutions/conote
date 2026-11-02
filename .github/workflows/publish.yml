@@ -72,7 +72,7 @@ jobs:
         run: tar -cf package-dist-artifacts.tar packages/*/dist
 
       - name: Upload package dist artifacts
-        uses: DevinoSolutions/artifact/upload@739b3abd2f5f7bd4db8106bda6513ae94020c9e6 # v1.1.0 (current target of the moving v1 tag)
+        uses: DevinoSolutions/artifact/upload@67676f30bcd9a876562aafa007f19c2eb2fe148d # v1.1.0 (current target of the moving v1 tag)
         with:
           name: package-dist-artifacts
           if-no-files-found: error
